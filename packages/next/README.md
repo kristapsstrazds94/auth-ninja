@@ -23,4 +23,30 @@ await runAuthMigrations(handle);
 
 SQL migrations ship in the package `drizzle/` folder. Regenerate with `pnpm --filter @auth-ninja/next db:generate`.
 
+## Register and login routes
+
+Wire App Router handlers with a shared context:
+
+```ts
+import {
+  createAuthDb,
+  createAuthNinjaContext,
+  createLoginHandler,
+  createRegisterHandler,
+  runAuthMigrations,
+} from "@auth-ninja/next";
+import { loadAuthNinjaConfig } from "@auth-ninja/core";
+
+const config = loadAuthNinjaConfig();
+const { db, client } = createAuthDb(config.databaseUrl);
+await runAuthMigrations({ db, client });
+
+const auth = createAuthNinjaContext({ config, db });
+
+export const POST = createRegisterHandler(auth);
+// app/api/auth/login/route.ts → createLoginHandler(auth)
+```
+
+Sessions use HttpOnly `auth_session` cookies; login rotates any existing session ID.
+
 Implemented incrementally via `/next` tasks in `docs/TASKS.md`.
