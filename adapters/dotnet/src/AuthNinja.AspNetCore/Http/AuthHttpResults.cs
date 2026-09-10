@@ -20,6 +20,23 @@ internal static class AuthHttpResults
     public static IResult Error(AuthNinjaException ex) =>
         Json(new ErrorResponse { Code = ToWireCode(ex.Code), Message = ex.Message }, ex.Status);
 
+    public static async Task WriteErrorAsync(
+        HttpContext context,
+        AuthNinjaException ex,
+        int? retryAfterSeconds = null)
+    {
+        if (retryAfterSeconds is > 0)
+        {
+            context.Response.Headers.RetryAfter = retryAfterSeconds.Value.ToString();
+        }
+
+        context.Response.StatusCode = ex.Status;
+        context.Response.ContentType = "application/json; charset=utf-8";
+        await context.Response.WriteAsJsonAsync(
+            new ErrorResponse { Code = ToWireCode(ex.Code), Message = ex.Message },
+            JsonOptions);
+    }
+
     public static IResult WithSessionCookie(
         IOptions<AuthNinjaOptions> options,
         HttpContext context,

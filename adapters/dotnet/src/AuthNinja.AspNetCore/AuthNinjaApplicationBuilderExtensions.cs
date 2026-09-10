@@ -8,7 +8,7 @@ namespace AuthNinja.AspNetCore;
 public static class AuthNinjaApplicationBuilderExtensions
 {
     /// <summary>
-    /// Adds the Auth-Ninja middleware stub. Call <c>MapAuthNinja()</c> to register endpoints.
+    /// Adds Auth-Ninja middleware (rate limit, CSRF, IP audit). Call <c>MapAuthNinja()</c> to register endpoints.
     /// </summary>
     public static IApplicationBuilder UseAuthNinja(this IApplicationBuilder app)
     {

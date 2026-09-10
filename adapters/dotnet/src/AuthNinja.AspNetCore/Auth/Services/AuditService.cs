@@ -76,4 +76,24 @@ internal sealed class AuditService(AuthNinjaDbContext db)
 
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    public async Task PersistIpAuditAsync(
+        string reason,
+        string ipAddress,
+        string? userAgent,
+        DateTimeOffset now,
+        CancellationToken cancellationToken = default)
+    {
+        db.AuditEvents.Add(new AuditEvent
+        {
+            Id = Guid.NewGuid(),
+            Type = AuditEventType.Ip,
+            OccurredAt = now,
+            IpAddress = ipAddress,
+            UserAgent = userAgent,
+            Payload = new AuditEventPayload { Reason = reason },
+        });
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
 }

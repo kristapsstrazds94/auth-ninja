@@ -2,6 +2,7 @@ using AuthNinja.AspNetCore.Auth.Lockout;
 using AuthNinja.AspNetCore.Auth.Services;
 using AuthNinja.AspNetCore.Data;
 using AuthNinja.AspNetCore.Data.Enums;
+using AuthNinja.AspNetCore.Middleware;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -50,6 +51,7 @@ public static class AuthNinjaServiceCollectionExtensions
             });
         });
 
+        services.AddSingleton<InMemoryRateLimiter>();
         services.AddSingleton<ILockoutStore, InMemoryLockoutStore>();
         services.AddScoped<LockoutEngine>();
         services.AddScoped<SessionService>();

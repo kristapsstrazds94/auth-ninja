@@ -35,7 +35,7 @@ public sealed class AuthEndpointTests : IAsyncLifetime
         using var host = await CreateHostAsync();
         var client = host.GetTestClient();
 
-        var register = await PostJsonAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
+        var register = await PostJsonWithCsrfAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
         Assert.Equal(HttpStatusCode.Created, register.StatusCode);
 
         var sessionToken = ExtractSessionCookie(register);
@@ -50,8 +50,10 @@ public sealed class AuthEndpointTests : IAsyncLifetime
         Assert.True(sessionBody.GetProperty("authenticated").GetBoolean());
         Assert.Equal(TestEmail, sessionBody.GetProperty("user").GetProperty("email").GetString());
 
+        var csrf = await FetchCsrfTokenAsync(client);
         var logoutRequest = new HttpRequestMessage(HttpMethod.Post, "/auth/logout");
         logoutRequest.Headers.Add("Cookie", $"{AuthConstants.SessionCookieName}={sessionToken}");
+        logoutRequest.Headers.Add(AuthConstants.CsrfHeaderName, csrf);
         var logout = await client.SendAsync(logoutRequest);
         Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
 
@@ -70,9 +72,9 @@ public sealed class AuthEndpointTests : IAsyncLifetime
         using var host = await CreateHostAsync();
         var client = host.GetTestClient();
 
-        await PostJsonAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
+        await PostJsonWithCsrfAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
 
-        var login = await PostJsonAsync(
+        var login = await PostJsonWithCsrfAsync(
             client,
             "/auth/login",
             new { email = TestEmail, password = "wrong-password-value" });
@@ -90,10 +92,10 @@ public sealed class AuthEndpointTests : IAsyncLifetime
         using var host = await CreateHostAsync();
         var client = host.GetTestClient();
 
-        var first = await PostJsonAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
+        var first = await PostJsonWithCsrfAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
         Assert.Equal(HttpStatusCode.Created, first.StatusCode);
 
-        var duplicate = await PostJsonAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
+        var duplicate = await PostJsonWithCsrfAsync(client, "/auth/register", new { email = TestEmail, password = TestPassword });
         Assert.Equal(HttpStatusCode.Conflict, duplicate.StatusCode);
 
         var body = await duplicate.Content.ReadFromJsonAsync<JsonElement>();
@@ -122,7 +124,7 @@ public sealed class AuthEndpointTests : IAsyncLifetime
         using var host = await CreateHostAsync();
         var client = host.GetTestClient();
 
-        var response = await PostJsonAsync(client, "/auth/register", new { email = "not-an-email", password = "short" });
+        var response = await PostJsonWithCsrfAsync(client, "/auth/register", new { email = "not-an-email", password = "short" });
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
     }
 
@@ -152,6 +154,7 @@ public sealed class AuthEndpointTests : IAsyncLifetime
                     db.Database.Migrate();
 
                     app.UseRouting();
+                    app.UseAuthNinja();
                     app.UseEndpoints(endpoints => endpoints.MapAuthNinja());
                 });
             })
@@ -160,13 +163,24 @@ public sealed class AuthEndpointTests : IAsyncLifetime
         return host;
     }
 
-    private static async Task<HttpResponseMessage> PostJsonAsync(HttpClient client, string path, object body)
+    private static async Task<string> FetchCsrfTokenAsync(HttpClient client)
     {
+        var response = await client.GetAsync("/auth/csrf");
+        response.EnsureSuccessStatusCode();
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>();
+        return body.GetProperty("token").GetString()
+            ?? throw new InvalidOperationException("Missing CSRF token.");
+    }
+
+    private static async Task<HttpResponseMessage> PostJsonWithCsrfAsync(HttpClient client, string path, object body)
+    {
+        var csrf = await FetchCsrfTokenAsync(client);
         var request = new HttpRequestMessage(HttpMethod.Post, path)
         {
             Content = JsonContent.Create(body),
         };
         request.Content.Headers.ContentType = new MediaTypeHeaderValue("application/json");
+        request.Headers.Add(AuthConstants.CsrfHeaderName, csrf);
         return await client.SendAsync(request);
     }
 

@@ -2,6 +2,8 @@ namespace AuthNinja.AspNetCore.Auth;
 
 internal static class AuthConstants
 {
+    public const string DefaultAuthPathPrefix = "/auth";
+
     public const string SessionCookieName = "auth_session";
 
     public const string CsrfHeaderName = "X-CSRF-Token";
