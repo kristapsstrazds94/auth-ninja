@@ -1,8 +1,10 @@
+using AuthNinja.AspNetCore.Auth;
 using AuthNinja.AspNetCore.Auth.Lockout;
 using AuthNinja.AspNetCore.Auth.Services;
 using AuthNinja.AspNetCore.Data;
 using AuthNinja.AspNetCore.Data.Enums;
 using AuthNinja.AspNetCore.Middleware;
+using Fido2NetLib;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -57,6 +59,14 @@ public static class AuthNinjaServiceCollectionExtensions
         services.AddScoped<SessionService>();
         services.AddScoped<AuditService>();
         services.AddScoped<AuthService>();
+        services.AddScoped<TwoFaService>();
+        services.AddScoped<PasskeyService>();
+        services.AddSingleton<InMemoryWebAuthnChallengeStore>();
+        services.AddSingleton<IFido2>(sp =>
+        {
+            var options = sp.GetRequiredService<IOptions<AuthNinjaOptions>>().Value;
+            return new Fido2(WebAuthnConfig.ToFido2Configuration(options));
+        });
 
         return services;
     }

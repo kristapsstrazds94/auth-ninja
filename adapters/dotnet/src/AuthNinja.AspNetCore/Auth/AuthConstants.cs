@@ -11,4 +11,6 @@ internal static class AuthConstants
     public static readonly TimeSpan CsrfTokenTtl = TimeSpan.FromHours(1);
 
     public static readonly TimeSpan LoginChallengeTtl = TimeSpan.FromMinutes(5);
+
+    public static readonly TimeSpan WebAuthnChallengeTtl = TimeSpan.FromMinutes(5);
 }

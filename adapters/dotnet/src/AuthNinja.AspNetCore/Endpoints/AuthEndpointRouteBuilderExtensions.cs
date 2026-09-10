@@ -26,6 +26,9 @@ public static class AuthEndpointRouteBuilderExtensions
         group.MapGet("/session", GetSessionAsync);
         group.MapGet("/csrf", GetCsrfAsync);
 
+        endpoints.MapAuthNinjaTwoFa();
+        endpoints.MapAuthNinjaPasskeys();
+
         return endpoints;
     }
 

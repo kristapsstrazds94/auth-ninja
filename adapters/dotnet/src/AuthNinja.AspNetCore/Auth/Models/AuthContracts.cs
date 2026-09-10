@@ -76,3 +76,110 @@ public sealed class CreatedSession
 
     public required DateTimeOffset ExpiresAt { get; init; }
 }
+
+public sealed class TotpEnrollResponse
+{
+    [JsonPropertyName("secret")]
+    public required string Secret { get; init; }
+
+    [JsonPropertyName("otpauthUrl")]
+    public required string OtpauthUrl { get; init; }
+}
+
+public sealed class TotpCodeRequest
+{
+    [JsonPropertyName("code")]
+    public string? Code { get; init; }
+}
+
+public sealed class TotpConfirmResponse
+{
+    [JsonPropertyName("mfaEnabled")]
+    public bool MfaEnabled { get; init; } = true;
+
+    [JsonPropertyName("backupCodes")]
+    public required string[] BackupCodes { get; init; }
+}
+
+public sealed class TotpVerifyRequest
+{
+    [JsonPropertyName("loginToken")]
+    public string? LoginToken { get; init; }
+
+    [JsonPropertyName("code")]
+    public string? Code { get; init; }
+}
+
+public sealed class PasswordConfirmRequest
+{
+    [JsonPropertyName("password")]
+    public string? Password { get; init; }
+}
+
+public sealed class BackupCodesResponse
+{
+    [JsonPropertyName("backupCodes")]
+    public required string[] BackupCodes { get; init; }
+}
+
+public sealed class Disable2faRequest
+{
+    [JsonPropertyName("password")]
+    public string? Password { get; init; }
+
+    [JsonPropertyName("code")]
+    public string? Code { get; init; }
+
+    [JsonPropertyName("backupCode")]
+    public string? BackupCode { get; init; }
+}
+
+public sealed class WebAuthnOptionsResponse
+{
+    [JsonPropertyName("options")]
+    public required object Options { get; init; }
+}
+
+public sealed class WebAuthnFinishRequest
+{
+    [JsonPropertyName("response")]
+    public System.Text.Json.JsonElement Response { get; init; }
+}
+
+public sealed class PasskeyLoginBeginRequest
+{
+    [JsonPropertyName("email")]
+    public string? Email { get; init; }
+}
+
+public sealed class PasskeyCredentialResponse
+{
+    [JsonPropertyName("credentialId")]
+    public required string CredentialId { get; init; }
+
+    [JsonPropertyName("createdAt")]
+    public required string CreatedAt { get; init; }
+
+    [JsonPropertyName("nickname")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Nickname { get; init; }
+}
+
+public sealed class PasskeySummary
+{
+    [JsonPropertyName("credentialId")]
+    public required string CredentialId { get; init; }
+
+    [JsonPropertyName("createdAt")]
+    public required string CreatedAt { get; init; }
+
+    [JsonPropertyName("nickname")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? Nickname { get; init; }
+}
+
+public sealed class PasskeyListResponse
+{
+    [JsonPropertyName("passkeys")]
+    public required PasskeySummary[] Passkeys { get; init; }
+}
