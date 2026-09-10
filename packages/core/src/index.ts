@@ -51,6 +51,20 @@ export {
   type VerifyTotpCodeOptions,
 } from "./totp.js";
 export {
+  clearLockoutRecord,
+  evaluateLockout,
+  InMemoryLockoutStore,
+  LockoutEngine,
+  lockoutConfigFromAuthConfig,
+  pruneLockoutRecord,
+  recordFailedAttempt,
+  type LockoutConfig,
+  type LockoutRecord,
+  type LockoutStatus,
+  type LockoutStore,
+  type RecordFailureResult,
+} from "./lockout.js";
+export {
   AUDIT_EVENT_TYPES,
   AUDIT_FORBIDDEN_FIELD_NAMES,
   IP_AUDIT_REASONS,
