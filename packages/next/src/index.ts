@@ -17,6 +17,18 @@ export { createSessionHandler, type SessionRouteHandler } from "./routes/session
 export { createLogoutHandler, type LogoutRouteHandler } from "./routes/logout.js";
 export { createCsrfHandler, type CsrfRouteHandler } from "./routes/csrf.js";
 export {
+  createTwoFaBackupCodesHandler,
+  createTwoFaConfirmHandler,
+  createTwoFaDisableHandler,
+  createTwoFaEnrollHandler,
+  createTwoFaVerifyHandler,
+  type TwoFaBackupCodesHandler,
+  type TwoFaConfirmHandler,
+  type TwoFaDisableHandler,
+  type TwoFaEnrollHandler,
+  type TwoFaVerifyHandler,
+} from "./routes/two-fa.js";
+export {
   AUTH_CSRF_HEADER,
   DEFAULT_AUTH_PATH_PREFIX,
   CSRF_TOKEN_TTL_MS,
@@ -44,6 +56,18 @@ export { registerUser, type RegisterResult } from "./auth/register.js";
 export { loginUser, type LoginResult } from "./auth/login.js";
 export { getSessionUser, type GetSessionSuccess } from "./auth/get-session.js";
 export { logoutUser, type LogoutSuccess } from "./auth/logout.js";
+export {
+  confirmTwoFa,
+  disableTwoFa,
+  enrollTwoFa,
+  regenerateBackupCodes,
+  verifyTwoFaLogin,
+  type ConfirmTwoFaResult,
+  type DisableTwoFaResult,
+  type EnrollTwoFaResult,
+  type RegenerateBackupCodesResult,
+  type VerifyTwoFaLoginResult,
+} from "./auth/two-fa.js";
 export {
   AUTH_SESSION_COOKIE_NAME,
   LOGIN_CHALLENGE_TTL_MS,
