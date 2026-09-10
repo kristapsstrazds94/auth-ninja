@@ -15,7 +15,7 @@ dist/
 .cursor/
 .cursor-ai/
 AGENTS.md
-docs/TASKS.md
+docs/
 
 # IDE
 .idea/
