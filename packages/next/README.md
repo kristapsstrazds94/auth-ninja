@@ -49,4 +49,18 @@ export const POST = createRegisterHandler(auth);
 
 Sessions use HttpOnly `auth_session` cookies; login rotates any existing session ID.
 
+## Session and logout routes
+
+```ts
+import {
+  createLogoutHandler,
+  createSessionHandler,
+} from "@auth-ninja/next";
+
+export const GET = createSessionHandler(auth);
+// app/api/auth/logout/route.ts → createLogoutHandler(auth)
+```
+
+`GET /auth/session` returns the authenticated user snapshot and refreshes the idle timer. `POST /auth/logout` invalidates the server session and clears the cookie.
+
 Implemented incrementally via `/next` tasks in `docs/TASKS.md`.

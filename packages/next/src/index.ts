@@ -13,8 +13,12 @@ export function createAuthNinjaConfig(options: AuthNinjaNextOptions): AuthNinjaN
 export { createAuthNinjaContext, type AuthNinjaContext } from "./context.js";
 export { createRegisterHandler, type RegisterRouteHandler } from "./routes/register.js";
 export { createLoginHandler, type LoginRouteHandler } from "./routes/login.js";
+export { createSessionHandler, type SessionRouteHandler } from "./routes/session.js";
+export { createLogoutHandler, type LogoutRouteHandler } from "./routes/logout.js";
 export { registerUser, type RegisterResult } from "./auth/register.js";
 export { loginUser, type LoginResult } from "./auth/login.js";
+export { getSessionUser, type GetSessionSuccess } from "./auth/get-session.js";
+export { logoutUser, type LogoutSuccess } from "./auth/logout.js";
 export {
   AUTH_SESSION_COOKIE_NAME,
   LOGIN_CHALLENGE_TTL_MS,
@@ -29,8 +33,11 @@ export { generateSessionToken, hashSessionToken } from "./session/token.js";
 export {
   createSession,
   invalidateSessionByToken,
+  resolveSessionByToken,
   rotateSession,
+  touchSession,
   type CreatedSession,
+  type ResolvedSession,
 } from "./session/service.js";
 
 export {

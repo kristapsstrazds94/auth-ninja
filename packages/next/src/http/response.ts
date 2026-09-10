@@ -6,6 +6,7 @@ import {
   type AuthNinjaErrorCode,
 } from "@auth-ninja/core";
 import {
+  buildSessionClearCookieHeader,
   buildSessionSetCookieHeader,
   sessionCookieOptionsFromConfig,
 } from "../session/cookie.js";
@@ -44,6 +45,21 @@ export function withSessionCookie(
     statusText: response.statusText,
     headers,
   });
+}
+
+export function withClearSessionCookie(ctx: AuthNinjaContext, response: Response): Response {
+  const cookieOptions = sessionCookieOptionsFromConfig(ctx.config);
+  const headers = new Headers(response.headers);
+  headers.append("Set-Cookie", buildSessionClearCookieHeader(cookieOptions.secure));
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
+export function emptyResponse(status: number, headers?: HeadersInit): Response {
+  return new Response(null, { status, headers });
 }
 
 export function validationErrorResponse(): Response {

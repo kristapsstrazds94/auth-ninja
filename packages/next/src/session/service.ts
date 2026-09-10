@@ -1,8 +1,13 @@
-import type { AuthNinjaConfig } from "@auth-ninja/core";
+import { createAuthError, type AuthNinjaConfig } from "@auth-ninja/core";
 import { eq } from "drizzle-orm";
 import type { AuthDb } from "../db/client.js";
-import { sessions } from "../db/schema.js";
+import { sessions, users, type Session, type User } from "../db/schema.js";
 import { generateSessionToken, hashSessionToken } from "./token.js";
+
+export type ResolvedSession = {
+  session: Session;
+  user: User;
+};
 
 export type SessionCreationMeta = {
   ipAddress?: string;
@@ -48,6 +53,57 @@ export async function createSession(
   }
 
   return { token, sessionId: row.id, expiresAt };
+}
+
+/** Load session and user by cookie token; enforce idle and absolute timeouts. */
+export async function resolveSessionByToken(
+  db: AuthDb,
+  config: AuthNinjaConfig,
+  token: string | undefined,
+  now: Date = new Date(),
+): Promise<ResolvedSession> {
+  if (!token) {
+    throw createAuthError("SESSION_EXPIRED");
+  }
+
+  const tokenHash = hashSessionToken(token);
+  const [row] = await db
+    .select({
+      session: sessions,
+      user: users,
+    })
+    .from(sessions)
+    .innerJoin(users, eq(sessions.userId, users.id))
+    .where(eq(sessions.tokenHash, tokenHash))
+    .limit(1);
+
+  if (!row) {
+    throw createAuthError("SESSION_EXPIRED");
+  }
+
+  const { session, user } = row;
+
+  if (now >= session.expiresAt) {
+    await db.delete(sessions).where(eq(sessions.id, session.id));
+    throw createAuthError("SESSION_EXPIRED");
+  }
+
+  const idleMs = config.sessionIdleMinutes * 60 * 1000;
+  if (now.getTime() - session.lastSeenAt.getTime() > idleMs) {
+    await db.delete(sessions).where(eq(sessions.id, session.id));
+    throw createAuthError("SESSION_EXPIRED");
+  }
+
+  return { session, user };
+}
+
+/** Bump last-seen timestamp for an active session. */
+export async function touchSession(
+  db: AuthDb,
+  sessionId: string,
+  now: Date = new Date(),
+): Promise<void> {
+  await db.update(sessions).set({ lastSeenAt: now }).where(eq(sessions.id, sessionId));
 }
 
 /** Delete a session by raw cookie token. No-op when token is missing or unknown. */
