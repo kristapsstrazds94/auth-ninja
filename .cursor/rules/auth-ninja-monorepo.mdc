@@ -1,0 +1,31 @@
+---
+description: Auth-Ninja monorepo conventions for packages and builds
+globs: packages/**/*
+alwaysApply: false
+---
+
+# Monorepo conventions
+
+## Package boundaries
+
+- `@auth-ninja/core` — no React, Next, or Node-only server deps except Zod/crypto.
+- `@auth-ninja/protocol` — OpenAPI + shared types only.
+- `@auth-ninja/react` — depends on core; peer dep on React.
+- `@auth-ninja/next` — depends on core + protocol; peer dep on Next.js.
+- `auth-ninja` CLI — depends on core; no React.
+
+## Imports
+
+- Use `.js` extensions in TS source imports (NodeNext resolution).
+- Workspace deps: `"@auth-ninja/core": "workspace:*"`.
+
+## Build
+
+- Each package builds with `tsc` to `dist/`.
+- Run `pnpm build` from root via Turborepo.
+- `"files": ["dist", "README.md"]` in publishable packages.
+
+## Tests
+
+- Vitest per package in `src/*.test.ts`.
+- Do not add UI component tests to `packages/react` — hook tests only.

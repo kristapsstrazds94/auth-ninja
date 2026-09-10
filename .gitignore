@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+dist/
+*.tsbuildinfo
+.turbo/
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# AI scratch (local only — not shared)
+.cursor-ai/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Test & coverage
+coverage/
+
+# .NET
+bin/
+obj/
+*.user
+*.suo
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
