@@ -6,7 +6,7 @@ export type AuthState = {
   isLoading: boolean;
 };
 
-/** Headless auth hook — full implementation in task 2.1 */
+/** Headless auth hook — full implementation in task 2.2 */
 export function useAuth(): AuthState {
   const { baseUrl } = useAuthContext();
   return {
