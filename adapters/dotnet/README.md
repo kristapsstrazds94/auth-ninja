@@ -9,6 +9,18 @@ builder.Services.AddAuthNinja(options => options.BindConfiguration(builder.Confi
 app.UseAuthNinja();
 ```
 
+## Database
+
+EF Core entities mirror `@auth-ninja/next` Drizzle schema (`users`, `sessions`, `credentials`, `audit_events`).
+
+```bash
+cd adapters/dotnet
+export AUTH_NINJA_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/auth_ninja"
+dotnet ef database update --project src/AuthNinja.AspNetCore/AuthNinja.AspNetCore.csproj
+```
+
+Migration integration tests use Testcontainers (Docker required).
+
 ## Build & test
 
 ```bash

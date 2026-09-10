@@ -1,3 +1,4 @@
+using AuthNinja.AspNetCore.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
@@ -25,6 +26,11 @@ public sealed class AuthNinjaServiceCollectionExtensionsTests
 
         var options = host.Services.GetRequiredService<IOptions<AuthNinjaOptions>>().Value;
         Assert.Equal("http://localhost:3000", options.BaseUrl);
+
+        await using (var scope = host.Services.CreateAsyncScope())
+        {
+            Assert.NotNull(scope.ServiceProvider.GetService<AuthNinjaDbContext>());
+        }
 
         await host.StopAsync();
     }
