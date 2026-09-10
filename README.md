@@ -24,15 +24,6 @@ pnpm build
 pnpm test
 ```
 
-## Implementing with Cursor
-
-1. Open this repo in Cursor
-2. Run **`/next`** to pick and implement the next task from [`docs/TASKS.md`](docs/TASKS.md)
-3. Run the printed test commands
-4. Reply **`tests passed`** to mark the task done
-
-See [`AGENTS.md`](AGENTS.md) for agent rules and security requirements.
-
 ## Security defaults
 
 - HttpOnly session cookies (never localStorage tokens)
@@ -49,4 +40,4 @@ Demo apps with throwaway UI live under `demos/` — **not published** to npm. Us
 
 ## License
 
-Private — internal use.
+[MIT](LICENSE)

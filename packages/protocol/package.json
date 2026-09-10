@@ -1,6 +1,7 @@
 {
   "name": "@auth-ninja/protocol",
   "version": "0.0.0",
+  "license": "MIT",
   "description": "OpenAPI contract and shared auth event schemas",
   "type": "module",
   "main": "./dist/index.js",
@@ -25,6 +26,6 @@
     "typescript": "^5.7.2"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   }
 }

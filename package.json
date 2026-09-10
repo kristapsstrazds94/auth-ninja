@@ -1,6 +1,7 @@
 {
   "name": "auth-ninja",
   "private": true,
+  "license": "MIT",
   "description": "Secure, reusable authentication for React + Next.js + .NET internal projects",
   "scripts": {
     "build": "turbo run build",

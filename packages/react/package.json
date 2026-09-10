@@ -1,6 +1,7 @@
 {
   "name": "@auth-ninja/react",
   "version": "0.0.0",
+  "license": "MIT",
   "description": "Headless React hooks and guards for Auth-Ninja (no UI components)",
   "type": "module",
   "main": "./dist/index.js",
@@ -32,6 +33,6 @@
     "typescript": "^5.7.2"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   }
 }

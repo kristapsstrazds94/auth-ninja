@@ -1,6 +1,7 @@
 {
   "name": "@auth-ninja/core",
   "version": "0.0.0",
+  "license": "MIT",
   "description": "Shared auth config, validation, errors, and crypto helpers",
   "type": "module",
   "main": "./dist/index.js",
@@ -27,6 +28,6 @@
     "typescript": "^5.7.2"
   },
   "publishConfig": {
-    "access": "restricted"
+    "access": "public"
   }
 }

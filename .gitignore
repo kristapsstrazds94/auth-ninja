@@ -11,8 +11,11 @@ dist/
 .env.*
 !.env.example
 
-# AI scratch (local only — not shared)
+# AI agent docs (local only — not on GitHub or npm)
+.cursor/
 .cursor-ai/
+AGENTS.md
+docs/TASKS.md
 
 # IDE
 .idea/
