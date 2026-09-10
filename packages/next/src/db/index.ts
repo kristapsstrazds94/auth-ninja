@@ -1,0 +1,30 @@
+export {
+  closeAuthDb,
+  createAuthDb,
+  type AuthDb,
+  type AuthDbHandle,
+  type CreateAuthDbOptions,
+} from "./client.js";
+export { authMigrationsFolder, runAuthMigrations } from "./migrate.js";
+export {
+  auditEventTypeEnum,
+  auditEvents,
+  auditEventsRelations,
+  authNinjaSchema,
+  credentialTypeEnum,
+  credentials,
+  credentialsRelations,
+  sessions,
+  sessionsRelations,
+  users,
+  usersRelations,
+  type AuditEventPayload,
+  type AuditEventRow,
+  type Credential,
+  type NewAuditEventRow,
+  type NewCredential,
+  type NewSession,
+  type NewUser,
+  type Session,
+  type User,
+} from "./schema.js";

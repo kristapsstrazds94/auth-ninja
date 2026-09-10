@@ -5,7 +5,37 @@ export type AuthNinjaNextOptions = Partial<AuthNinjaConfig> & {
   baseUrl: string;
 };
 
-/** Placeholder — full Next.js integration in task 3.1 */
+/** Merge partial Next adapter options with required fields. */
 export function createAuthNinjaConfig(options: AuthNinjaNextOptions): AuthNinjaNextOptions {
   return options;
 }
+
+export {
+  closeAuthDb,
+  createAuthDb,
+  authMigrationsFolder,
+  runAuthMigrations,
+  auditEventTypeEnum,
+  auditEvents,
+  auditEventsRelations,
+  authNinjaSchema,
+  credentialTypeEnum,
+  credentials,
+  credentialsRelations,
+  sessions,
+  sessionsRelations,
+  users,
+  usersRelations,
+  type AuditEventPayload,
+  type AuditEventRow,
+  type AuthDb,
+  type AuthDbHandle,
+  type CreateAuthDbOptions,
+  type Credential,
+  type NewAuditEventRow,
+  type NewCredential,
+  type NewSession,
+  type NewUser,
+  type Session,
+  type User,
+} from "./db/index.js";
