@@ -63,4 +63,31 @@ export const GET = createSessionHandler(auth);
 
 `GET /auth/session` returns the authenticated user snapshot and refreshes the idle timer. `POST /auth/logout` invalidates the server session and clears the cookie.
 
+## Middleware (API guard)
+
+Rate limiting, CSRF validation, and IP audit hooks run before auth route handlers:
+
+```ts
+import {
+  createAuthApiGuard,
+  createAuthMiddleware,
+  createCsrfHandler,
+} from "@auth-ninja/next";
+
+// middleware.ts — reject bad requests before handlers run
+export default createAuthMiddleware(auth, { pathPrefix: "/api/auth" });
+
+// app/api/auth/csrf/route.ts
+export const GET = createCsrfHandler(auth);
+
+// Or reuse a shared guard inside route wrappers
+const guard = createAuthApiGuard(auth, { pathPrefix: "/api/auth" });
+const blocked = await guard(request);
+if (blocked) return blocked;
+```
+
+- **Rate limit** — per-IP fixed window (`apiRateLimitPerMinute`, default 100/min)
+- **CSRF** — signed `X-CSRF-Token` header on state-changing routes when `csrfEnabled` (default `true`)
+- **IP audit** — allowlist violations and rate-limit breaches persist `ip` audit events
+
 Implemented incrementally via `/next` tasks in `docs/TASKS.md`.

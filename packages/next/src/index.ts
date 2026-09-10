@@ -15,6 +15,31 @@ export { createRegisterHandler, type RegisterRouteHandler } from "./routes/regis
 export { createLoginHandler, type LoginRouteHandler } from "./routes/login.js";
 export { createSessionHandler, type SessionRouteHandler } from "./routes/session.js";
 export { createLogoutHandler, type LogoutRouteHandler } from "./routes/logout.js";
+export { createCsrfHandler, type CsrfRouteHandler } from "./routes/csrf.js";
+export {
+  AUTH_CSRF_HEADER,
+  DEFAULT_AUTH_PATH_PREFIX,
+  CSRF_TOKEN_TTL_MS,
+} from "./middleware/constants.js";
+export { generateCsrfToken, verifyCsrfToken } from "./middleware/csrf.js";
+export { InMemoryRateLimiter, type RateLimitResult } from "./middleware/rate-limit.js";
+export { isAuthApiPath, requiresCsrfProtection } from "./middleware/paths.js";
+export {
+  guardAuthApiRequest,
+  type AuthApiGuardContext,
+  type AuthApiGuardOptions,
+} from "./middleware/guard.js";
+export {
+  runIpAuditHook,
+  recordSuspiciousIpAudit,
+  type IpAuditHookResult,
+} from "./middleware/ip-audit-hook.js";
+export {
+  createAuthApiGuard,
+  createAuthMiddleware,
+  type AuthApiGuard,
+  type AuthMiddlewareOptions,
+} from "./middleware/next.js";
 export { registerUser, type RegisterResult } from "./auth/register.js";
 export { loginUser, type LoginResult } from "./auth/login.js";
 export { getSessionUser, type GetSessionSuccess } from "./auth/get-session.js";
