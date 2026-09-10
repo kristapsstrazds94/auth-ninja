@@ -29,6 +29,20 @@ export {
   type TwoFaVerifyHandler,
 } from "./routes/two-fa.js";
 export {
+  createPasskeyDeleteHandler,
+  createPasskeyListHandler,
+  createPasskeyLoginBeginHandler,
+  createPasskeyLoginFinishHandler,
+  createPasskeyRegisterBeginHandler,
+  createPasskeyRegisterFinishHandler,
+  type PasskeyDeleteHandler,
+  type PasskeyListHandler,
+  type PasskeyLoginBeginHandler,
+  type PasskeyLoginFinishHandler,
+  type PasskeyRegisterBeginHandler,
+  type PasskeyRegisterFinishHandler,
+} from "./routes/passkeys.js";
+export {
   AUTH_CSRF_HEADER,
   DEFAULT_AUTH_PATH_PREFIX,
   CSRF_TOKEN_TTL_MS,
@@ -69,8 +83,29 @@ export {
   type VerifyTwoFaLoginResult,
 } from "./auth/two-fa.js";
 export {
+  deletePasskey,
+  listPasskeys,
+  passkeyLoginBegin,
+  passkeyLoginFinish,
+  passkeyRegisterBegin,
+  passkeyRegisterFinish,
+  type PasskeyDeleteResult,
+  type PasskeyListSuccess,
+  type PasskeyLoginBeginResult,
+  type PasskeyLoginFinishResult,
+  type PasskeyRegisterBeginResult,
+  type PasskeyRegisterFinishResult,
+} from "./auth/passkeys.js";
+export {
+  InMemoryWebAuthnChallengeStore,
+  type WebAuthnChallengeKind,
+  type WebAuthnChallengeRecord,
+  type WebAuthnChallengeStore,
+} from "./auth/webauthn-challenge-store.js";
+export {
   AUTH_SESSION_COOKIE_NAME,
   LOGIN_CHALLENGE_TTL_MS,
+  WEBAUTHN_CHALLENGE_TTL_MS,
 } from "./session/constants.js";
 export {
   buildSessionClearCookieHeader,

@@ -42,7 +42,19 @@ export const disable2faRequestSchema = z
     message: "Either code or backupCode is required",
   });
 
+/** Matches OpenAPI `PasskeyLoginBeginRequest`. */
+export const passkeyLoginBeginRequestSchema = z.object({
+  email: z.string().email().optional(),
+});
+
+/** Matches OpenAPI WebAuthn finish request bodies (`response` field). */
+export const webAuthnFinishRequestSchema = z.object({
+  response: z.record(z.unknown()),
+});
+
 export type TotpCodeRequest = z.infer<typeof totpCodeRequestSchema>;
 export type TotpVerifyRequest = z.infer<typeof totpVerifyRequestSchema>;
 export type PasswordConfirmRequest = z.infer<typeof passwordConfirmRequestSchema>;
 export type Disable2faRequest = z.infer<typeof disable2faRequestSchema>;
+export type PasskeyLoginBeginRequest = z.infer<typeof passkeyLoginBeginRequestSchema>;
+export type WebAuthnFinishRequest = z.infer<typeof webAuthnFinishRequestSchema>;
