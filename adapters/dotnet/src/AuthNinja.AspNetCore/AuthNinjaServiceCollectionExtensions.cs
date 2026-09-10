@@ -1,3 +1,5 @@
+using AuthNinja.AspNetCore.Auth.Lockout;
+using AuthNinja.AspNetCore.Auth.Services;
 using AuthNinja.AspNetCore.Data;
 using AuthNinja.AspNetCore.Data.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +15,7 @@ namespace AuthNinja.AspNetCore;
 public static class AuthNinjaServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers Auth-Ninja options and validation. Endpoints are added in later tasks.
+    /// Registers Auth-Ninja options, services, and database context.
     /// </summary>
     public static IServiceCollection AddAuthNinja(
         this IServiceCollection services,
@@ -47,6 +49,12 @@ public static class AuthNinjaServiceCollectionExtensions
                 npgsql.MapEnum<CredentialType>("credential_type");
             });
         });
+
+        services.AddSingleton<ILockoutStore, InMemoryLockoutStore>();
+        services.AddScoped<LockoutEngine>();
+        services.AddScoped<SessionService>();
+        services.AddScoped<AuditService>();
+        services.AddScoped<AuthService>();
 
         return services;
     }

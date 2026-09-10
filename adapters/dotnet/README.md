@@ -7,6 +7,7 @@ Implemented via `/next` tasks in phase 4 (`docs/TASKS.md`).
 ```csharp
 builder.Services.AddAuthNinja(options => options.BindConfiguration(builder.Configuration));
 app.UseAuthNinja();
+app.MapAuthNinja(); // register, login, logout, session, csrf
 ```
 
 ## Database

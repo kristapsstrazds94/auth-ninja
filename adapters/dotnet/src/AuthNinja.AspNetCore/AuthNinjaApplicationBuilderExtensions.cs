@@ -8,7 +8,7 @@ namespace AuthNinja.AspNetCore;
 public static class AuthNinjaApplicationBuilderExtensions
 {
     /// <summary>
-    /// Adds the Auth-Ninja middleware stub. Route handlers will be mapped in later tasks.
+    /// Adds the Auth-Ninja middleware stub. Call <c>MapAuthNinja()</c> to register endpoints.
     /// </summary>
     public static IApplicationBuilder UseAuthNinja(this IApplicationBuilder app)
     {
