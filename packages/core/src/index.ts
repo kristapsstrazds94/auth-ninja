@@ -7,7 +7,22 @@ export {
   loadAuthNinjaConfig,
   type LoadAuthNinjaConfigOptions,
 } from "./env-loader.js";
-export { AuthNinjaError, type AuthNinjaErrorCode } from "./errors.js";
+export {
+  AUTH_ERROR_CATALOG,
+  AUTH_ERROR_CODES,
+  AUTH_ERROR_DEFAULT_STATUS,
+  AUTH_ERROR_MESSAGES,
+  AUTH_GENERIC_MESSAGES,
+  AuthNinjaError,
+  createAuthError,
+  isAuthNinjaError,
+  toAuthErrorResponse,
+  type AuthErrorDoc,
+  type AuthErrorResponse,
+  type AuthGenericMessageKey,
+  type AuthNinjaErrorCode,
+  type CreateAuthErrorOptions,
+} from "./errors.js";
 export { timingSafeEqualUtf8 } from "./crypto/timing.js";
 export {
   hashPassword,
