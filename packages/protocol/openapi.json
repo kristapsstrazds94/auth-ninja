@@ -2,8 +2,965 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Auth-Ninja API",
-    "version": "0.0.0",
-    "description": "Stub — full spec implemented in task 1.1"
+    "version": "0.1.0",
+    "description": "Shared authentication contract for @auth-ninja/next and AuthNinja.AspNetCore. Sessions use HttpOnly, Secure, SameSite=Strict cookies. State-changing routes require CSRF when enabled."
   },
-  "paths": {}
+  "tags": [
+    { "name": "session", "description": "Registration, login, logout, and session read" },
+    { "name": "csrf", "description": "CSRF token for state-changing requests" },
+    { "name": "password-reset", "description": "Password reset request and confirmation" },
+    { "name": "2fa", "description": "TOTP enrollment, verification, and backup codes" },
+    { "name": "passkeys", "description": "WebAuthn passkey registration and authentication" }
+  ],
+  "paths": {
+    "/auth/register": {
+      "post": {
+        "operationId": "register",
+        "tags": ["session"],
+        "summary": "Create account",
+        "description": "Register with email and password. Returns a generic message on success or failure to prevent user enumeration.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/RegisterRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Account created; session cookie may be set",
+            "headers": {
+              "Set-Cookie": { "$ref": "#/components/headers/SessionSetCookie" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "409": {
+            "description": "Generic registration failure (includes duplicate email)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Unable to complete registration."
+                }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/login": {
+      "post": {
+        "operationId": "login",
+        "tags": ["session"],
+        "summary": "Sign in with password",
+        "description": "Verify credentials. Returns MFA challenge when required; otherwise establishes session with rotated session ID.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/LoginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated or MFA required",
+            "headers": {
+              "Set-Cookie": { "$ref": "#/components/headers/SessionSetCookie" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/LoginResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/InvalidCredentials" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "423": { "$ref": "#/components/responses/AccountLocked" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/logout": {
+      "post": {
+        "operationId": "logout",
+        "tags": ["session"],
+        "summary": "Sign out",
+        "description": "Invalidate server session and clear session cookie.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "responses": {
+          "204": {
+            "description": "Logged out",
+            "headers": {
+              "Set-Cookie": { "$ref": "#/components/headers/SessionClearCookie" }
+            }
+          },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/session": {
+      "get": {
+        "operationId": "getSession",
+        "tags": ["session"],
+        "summary": "Read current session",
+        "description": "Returns authenticated user snapshot. Enforces idle and absolute session timeouts server-side.",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": {
+            "description": "Active session",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/csrf": {
+      "get": {
+        "operationId": "getCsrfToken",
+        "tags": ["csrf"],
+        "summary": "Obtain CSRF token",
+        "description": "Returns a CSRF token for use in the X-CSRF-Token header on state-changing requests.",
+        "responses": {
+          "200": {
+            "description": "CSRF token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CsrfResponse" }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/password-reset/request": {
+      "post": {
+        "operationId": "requestPasswordReset",
+        "tags": ["password-reset"],
+        "summary": "Request password reset",
+        "description": "Always returns the same generic success message whether or not the email exists.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasswordResetRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Generic acknowledgment",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericMessageResponse" },
+                "example": {
+                  "message": "If an account exists for that email, reset instructions will be sent."
+                }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/password-reset/confirm": {
+      "post": {
+        "operationId": "confirmPasswordReset",
+        "tags": ["password-reset"],
+        "summary": "Complete password reset",
+        "description": "Consume a one-time reset token and set a new password. Invalidates all existing sessions.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasswordResetConfirmRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Password updated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GenericMessageResponse" },
+                "example": { "message": "Password has been reset." }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or expired token, or validation error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "code": "VALIDATION_ERROR",
+                  "message": "Unable to reset password."
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/2fa/enroll": {
+      "post": {
+        "operationId": "enroll2fa",
+        "tags": ["2fa"],
+        "summary": "Begin TOTP enrollment",
+        "description": "Generate a TOTP secret shown once. Requires an authenticated session.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "responses": {
+          "200": {
+            "description": "Enrollment material",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TotpEnrollResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "409": {
+            "description": "2FA already enabled",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "code": "FORBIDDEN",
+                  "message": "Two-factor authentication is already enabled."
+                }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/2fa/confirm": {
+      "post": {
+        "operationId": "confirm2fa",
+        "tags": ["2fa"],
+        "summary": "Confirm TOTP enrollment",
+        "description": "Verify a TOTP code to activate 2FA and receive backup codes.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TotpCodeRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "2FA enabled",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TotpConfirmResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/MfaInvalid" },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/2fa/verify": {
+      "post": {
+        "operationId": "verify2fa",
+        "tags": ["2fa"],
+        "summary": "Verify TOTP during login",
+        "description": "Complete login after password step when MFA is required.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/TotpVerifyRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated",
+            "headers": {
+              "Set-Cookie": { "$ref": "#/components/headers/SessionSetCookie" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/MfaInvalid" },
+          "401": {
+            "description": "Invalid or expired login token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "code": "INVALID_CREDENTIALS",
+                  "message": "Unable to verify two-factor authentication."
+                }
+              }
+            }
+          },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "423": { "$ref": "#/components/responses/AccountLocked" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/2fa/backup-codes": {
+      "post": {
+        "operationId": "regenerateBackupCodes",
+        "tags": ["2fa"],
+        "summary": "Regenerate backup codes",
+        "description": "Issue new single-use backup codes. Requires password re-verification.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasswordConfirmRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "New backup codes (shown once)",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BackupCodesResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/InvalidCredentials" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/2fa": {
+      "delete": {
+        "operationId": "disable2fa",
+        "tags": ["2fa"],
+        "summary": "Disable TOTP",
+        "description": "Disable 2FA after password and TOTP or backup code verification.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/Disable2faRequest" }
+            }
+          }
+        },
+        "responses": {
+          "204": { "description": "2FA disabled" },
+          "400": { "$ref": "#/components/responses/MfaInvalid" },
+          "401": { "$ref": "#/components/responses/InvalidCredentials" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/passkeys/register/begin": {
+      "post": {
+        "operationId": "passkeyRegisterBegin",
+        "tags": ["passkeys"],
+        "summary": "Begin passkey registration",
+        "description": "Return WebAuthn registration options with server challenge.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "responses": {
+          "200": {
+            "description": "Registration options",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WebAuthnOptionsResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/passkeys/register/finish": {
+      "post": {
+        "operationId": "passkeyRegisterFinish",
+        "tags": ["passkeys"],
+        "summary": "Complete passkey registration",
+        "description": "Verify attestation and bind credential to user. Validates origin and RP ID.",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WebAuthnRegistrationFinishRequest" }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Passkey registered",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PasskeyCredentialResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/passkeys/login/begin": {
+      "post": {
+        "operationId": "passkeyLoginBegin",
+        "tags": ["passkeys"],
+        "summary": "Begin passkey authentication",
+        "description": "Return WebAuthn authentication options. Email optional for discoverable credentials.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/PasskeyLoginBeginRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authentication options",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WebAuthnOptionsResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/passkeys/login/finish": {
+      "post": {
+        "operationId": "passkeyLoginFinish",
+        "tags": ["passkeys"],
+        "summary": "Complete passkey authentication",
+        "description": "Verify assertion and establish session with rotated session ID.",
+        "security": [{ "csrfHeader": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/WebAuthnAuthenticationFinishRequest" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Authenticated",
+            "headers": {
+              "Set-Cookie": { "$ref": "#/components/headers/SessionSetCookie" }
+            },
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SessionResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/InvalidCredentials" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "423": { "$ref": "#/components/responses/AccountLocked" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/passkeys": {
+      "get": {
+        "operationId": "listPasskeys",
+        "tags": ["passkeys"],
+        "summary": "List registered passkeys",
+        "security": [{ "sessionCookie": [] }],
+        "responses": {
+          "200": {
+            "description": "Passkey credentials for current user",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PasskeyListResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    },
+    "/auth/passkeys/{credentialId}": {
+      "delete": {
+        "operationId": "deletePasskey",
+        "tags": ["passkeys"],
+        "summary": "Remove a passkey",
+        "security": [{ "sessionCookie": [], "csrfHeader": [] }],
+        "parameters": [
+          {
+            "name": "credentialId",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string", "minLength": 1 }
+          }
+        ],
+        "responses": {
+          "204": { "description": "Passkey removed" },
+          "401": { "$ref": "#/components/responses/SessionExpired" },
+          "403": { "$ref": "#/components/responses/CsrfInvalid" },
+          "404": {
+            "description": "Credential not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+                "example": {
+                  "code": "FORBIDDEN",
+                  "message": "Unable to remove passkey."
+                }
+              }
+            }
+          },
+          "429": { "$ref": "#/components/responses/RateLimited" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "sessionCookie": {
+        "type": "apiKey",
+        "in": "cookie",
+        "name": "auth_session",
+        "description": "HttpOnly, Secure, SameSite=Strict session cookie"
+      },
+      "csrfHeader": {
+        "type": "apiKey",
+        "in": "header",
+        "name": "X-CSRF-Token",
+        "description": "CSRF token from GET /auth/csrf"
+      }
+    },
+    "headers": {
+      "SessionSetCookie": {
+        "description": "Session cookie with rotated session ID",
+        "schema": {
+          "type": "string",
+          "example": "auth_session=...; Path=/; HttpOnly; Secure; SameSite=Strict"
+        }
+      },
+      "SessionClearCookie": {
+        "description": "Clears session cookie",
+        "schema": {
+          "type": "string",
+          "example": "auth_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+        }
+      }
+    },
+    "responses": {
+      "ValidationError": {
+        "description": "Request validation failed",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "VALIDATION_ERROR",
+              "message": "Invalid request."
+            }
+          }
+        }
+      },
+      "InvalidCredentials": {
+        "description": "Generic authentication failure",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "INVALID_CREDENTIALS",
+              "message": "Invalid email or password."
+            }
+          }
+        }
+      },
+      "AccountLocked": {
+        "description": "Account temporarily locked",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "ACCOUNT_LOCKED",
+              "message": "Too many failed attempts. Try again later."
+            }
+          }
+        }
+      },
+      "SessionExpired": {
+        "description": "Session missing or expired",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "SESSION_EXPIRED",
+              "message": "Session expired."
+            }
+          }
+        }
+      },
+      "MfaRequired": {
+        "description": "MFA step required before session is issued",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/MfaRequiredResponse" }
+          }
+        }
+      },
+      "MfaInvalid": {
+        "description": "Invalid MFA code or backup code",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "MFA_INVALID",
+              "message": "Invalid authentication code."
+            }
+          }
+        }
+      },
+      "CsrfInvalid": {
+        "description": "Missing or invalid CSRF token",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "CSRF_INVALID",
+              "message": "Invalid CSRF token."
+            }
+          }
+        }
+      },
+      "RateLimited": {
+        "description": "Rate limit exceeded",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "RATE_LIMITED",
+              "message": "Too many requests."
+            }
+          }
+        }
+      },
+      "Forbidden": {
+        "description": "Forbidden",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorResponse" },
+            "example": {
+              "code": "FORBIDDEN",
+              "message": "Forbidden."
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "INVALID_CREDENTIALS",
+          "ACCOUNT_LOCKED",
+          "SESSION_EXPIRED",
+          "MFA_REQUIRED",
+          "MFA_INVALID",
+          "CSRF_INVALID",
+          "RATE_LIMITED",
+          "FORBIDDEN",
+          "VALIDATION_ERROR"
+        ]
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "required": ["code", "message"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "$ref": "#/components/schemas/ErrorCode" },
+          "message": {
+            "type": "string",
+            "description": "Generic user-facing message; must not reveal account existence"
+          }
+        }
+      },
+      "User": {
+        "type": "object",
+        "required": ["id", "email"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email" },
+          "mfaEnabled": { "type": "boolean" },
+          "passkeysEnabled": { "type": "boolean" }
+        }
+      },
+      "SessionResponse": {
+        "type": "object",
+        "required": ["authenticated", "user"],
+        "additionalProperties": false,
+        "properties": {
+          "authenticated": { "const": true },
+          "user": { "$ref": "#/components/schemas/User" }
+        }
+      },
+      "MfaRequiredResponse": {
+        "type": "object",
+        "required": ["mfaRequired", "loginToken"],
+        "additionalProperties": false,
+        "properties": {
+          "mfaRequired": { "const": true },
+          "loginToken": {
+            "type": "string",
+            "description": "Short-lived token for POST /auth/2fa/verify"
+          }
+        }
+      },
+      "LoginResponse": {
+        "oneOf": [
+          { "$ref": "#/components/schemas/SessionResponse" },
+          { "$ref": "#/components/schemas/MfaRequiredResponse" }
+        ]
+      },
+      "RegisterRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "additionalProperties": false,
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 8, "maxLength": 128 }
+        }
+      },
+      "LoginRequest": {
+        "type": "object",
+        "required": ["email", "password"],
+        "additionalProperties": false,
+        "properties": {
+          "email": { "type": "string", "format": "email" },
+          "password": { "type": "string", "minLength": 1, "maxLength": 128 }
+        }
+      },
+      "PasswordResetRequest": {
+        "type": "object",
+        "required": ["email"],
+        "additionalProperties": false,
+        "properties": {
+          "email": { "type": "string", "format": "email" }
+        }
+      },
+      "PasswordResetConfirmRequest": {
+        "type": "object",
+        "required": ["token", "password"],
+        "additionalProperties": false,
+        "properties": {
+          "token": { "type": "string", "minLength": 32 },
+          "password": { "type": "string", "minLength": 8, "maxLength": 128 }
+        }
+      },
+      "PasswordConfirmRequest": {
+        "type": "object",
+        "required": ["password"],
+        "additionalProperties": false,
+        "properties": {
+          "password": { "type": "string", "minLength": 1, "maxLength": 128 }
+        }
+      },
+      "TotpCodeRequest": {
+        "type": "object",
+        "required": ["code"],
+        "additionalProperties": false,
+        "properties": {
+          "code": { "type": "string", "pattern": "^[0-9]{6}$" }
+        }
+      },
+      "TotpVerifyRequest": {
+        "type": "object",
+        "required": ["loginToken", "code"],
+        "additionalProperties": false,
+        "properties": {
+          "loginToken": { "type": "string", "minLength": 1 },
+          "code": { "type": "string", "pattern": "^[0-9]{6}$" }
+        }
+      },
+      "Disable2faRequest": {
+        "type": "object",
+        "required": ["password"],
+        "additionalProperties": false,
+        "properties": {
+          "password": { "type": "string", "minLength": 1, "maxLength": 128 },
+          "code": { "type": "string", "pattern": "^[0-9]{6}$" },
+          "backupCode": { "type": "string", "minLength": 8, "maxLength": 32 }
+        },
+        "description": "Requires password plus either code or backupCode"
+      },
+      "TotpEnrollResponse": {
+        "type": "object",
+        "required": ["secret", "otpauthUrl"],
+        "additionalProperties": false,
+        "properties": {
+          "secret": {
+            "type": "string",
+            "description": "Base32 TOTP secret — shown once only"
+          },
+          "otpauthUrl": { "type": "string", "format": "uri" }
+        }
+      },
+      "TotpConfirmResponse": {
+        "type": "object",
+        "required": ["mfaEnabled", "backupCodes"],
+        "additionalProperties": false,
+        "properties": {
+          "mfaEnabled": { "const": true },
+          "backupCodes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 8, "maxLength": 32 },
+            "minItems": 1
+          }
+        }
+      },
+      "BackupCodesResponse": {
+        "type": "object",
+        "required": ["backupCodes"],
+        "additionalProperties": false,
+        "properties": {
+          "backupCodes": {
+            "type": "array",
+            "items": { "type": "string", "minLength": 8, "maxLength": 32 },
+            "minItems": 1
+          }
+        }
+      },
+      "GenericMessageResponse": {
+        "type": "object",
+        "required": ["message"],
+        "additionalProperties": false,
+        "properties": {
+          "message": { "type": "string" }
+        }
+      },
+      "CsrfResponse": {
+        "type": "object",
+        "required": ["token"],
+        "additionalProperties": false,
+        "properties": {
+          "token": { "type": "string", "minLength": 32 }
+        }
+      },
+      "WebAuthnOptionsResponse": {
+        "type": "object",
+        "required": ["options"],
+        "additionalProperties": false,
+        "properties": {
+          "options": {
+            "type": "object",
+            "description": "PublicKeyCredentialCreationOptions or PublicKeyCredentialRequestOptions JSON"
+          }
+        }
+      },
+      "WebAuthnRegistrationFinishRequest": {
+        "type": "object",
+        "required": ["response"],
+        "additionalProperties": false,
+        "properties": {
+          "response": {
+            "type": "object",
+            "description": "RegistrationResponseJSON from @simplewebauthn/browser"
+          }
+        }
+      },
+      "WebAuthnAuthenticationFinishRequest": {
+        "type": "object",
+        "required": ["response"],
+        "additionalProperties": false,
+        "properties": {
+          "response": {
+            "type": "object",
+            "description": "AuthenticationResponseJSON from @simplewebauthn/browser"
+          }
+        }
+      },
+      "PasskeyLoginBeginRequest": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "email": { "type": "string", "format": "email" }
+        }
+      },
+      "PasskeyCredentialResponse": {
+        "type": "object",
+        "required": ["credentialId", "createdAt"],
+        "additionalProperties": false,
+        "properties": {
+          "credentialId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "nickname": { "type": "string", "maxLength": 64 }
+        }
+      },
+      "PasskeySummary": {
+        "type": "object",
+        "required": ["credentialId", "createdAt"],
+        "additionalProperties": false,
+        "properties": {
+          "credentialId": { "type": "string" },
+          "createdAt": { "type": "string", "format": "date-time" },
+          "nickname": { "type": "string", "maxLength": 64 }
+        }
+      },
+      "PasskeyListResponse": {
+        "type": "object",
+        "required": ["passkeys"],
+        "additionalProperties": false,
+        "properties": {
+          "passkeys": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/PasskeySummary" }
+          }
+        }
+      }
+    }
+  }
 }
