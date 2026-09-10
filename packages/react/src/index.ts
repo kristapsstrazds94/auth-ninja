@@ -9,6 +9,32 @@ export {
   type AuthRequestOptions,
 } from "./auth-client.js";
 export {
+  confirm2fa,
+  disable2fa,
+  enroll2fa,
+  regenerateBackupCodes,
+  verify2faLogin,
+  type BackupCodesResponse,
+  type Disable2faInput,
+  type TotpConfirmResponse,
+  type TotpEnrollResponse,
+  type TotpVerifyInput,
+} from "./auth-2fa.js";
+export {
+  deletePasskey,
+  listPasskeys,
+  passkeyLoginBegin,
+  passkeyLoginFinish,
+  passkeyRegisterBegin,
+  passkeyRegisterFinish,
+  type PasskeyCredential,
+  type PasskeyListResponse,
+  type PasskeyLoginBeginInput,
+  type WebAuthnCredentialResponseJson,
+  type WebAuthnOptionsJson,
+  type WebAuthnOptionsResponse,
+} from "./auth-passkeys.js";
+export {
   fetchSession,
   isMfaRequiredResponse,
   isSessionResponse,
@@ -39,5 +65,7 @@ export {
 } from "./session-sync.js";
 export { AuthProvider, type AuthProviderProps } from "./provider.js";
 export { useAuth, type AuthState } from "./use-auth.js";
+export { use2FA, type TwoFaState } from "./use-2fa.js";
+export { usePasskey, type PasskeyState } from "./use-passkey.js";
 export { useSession, type SessionState } from "./use-session.js";
 export { RequireAuth, type RequireAuthProps } from "./require-auth.js";

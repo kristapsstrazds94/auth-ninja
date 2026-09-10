@@ -20,5 +20,25 @@ export type AuthState = {
 
 /** Headless auth hook — session state and login/logout/register methods. */
 export function useAuth(): AuthState {
-  return useAuthContext();
+  const {
+    baseUrl,
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    register,
+    refreshSession,
+  } = useAuthContext();
+
+  return {
+    baseUrl,
+    user,
+    isAuthenticated,
+    isLoading,
+    login,
+    logout,
+    register,
+    refreshSession,
+  };
 }

@@ -148,11 +148,12 @@ describe("useSession", () => {
     expect(session.isAuthenticated).toBe(true);
 
     await act(async () => {
-      vi.advanceTimersByTime(300_000);
-      await Promise.resolve();
+      await vi.advanceTimersByTimeAsync(300_000);
     });
 
-    expect(session.isAuthenticated).toBe(false);
+    await vi.waitFor(() => {
+      expect(session.isAuthenticated).toBe(false);
+    });
     expect(session.user).toBeNull();
     expect(sessionCalls).toBeGreaterThan(1);
   });
@@ -185,10 +186,11 @@ describe("useSession", () => {
 
     await act(async () => {
       channel.postMessage({ type: "session-changed" });
-      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(session.isAuthenticated).toBe(true);
+    await vi.waitFor(() => {
+      expect(session.isAuthenticated).toBe(true);
+    });
     expect(session.user?.email).toBe("b@test.local");
     expect(sessionCalls).toBe(2);
 

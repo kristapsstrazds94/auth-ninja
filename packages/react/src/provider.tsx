@@ -8,7 +8,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { createAuthClient } from "./auth-client.js";
+import { createAuthClient, type AuthClient } from "./auth-client.js";
 import {
   fetchSession,
   isSessionResponse,
@@ -41,7 +41,12 @@ export type AuthProviderProps = {
   sessionSync?: boolean;
 };
 
-const AuthContext = createContext<AuthState | null>(null);
+export type AuthContextValue = AuthState & {
+  client: AuthClient;
+  establishSession(session: SessionResponse): void;
+};
+
+const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function AuthProvider({
   baseUrl,
@@ -102,6 +107,14 @@ export function AuthProvider({
     sessionSyncRef.current?.broadcast();
   }, []);
 
+  const establishSession = useCallback(
+    (session: SessionResponse) => {
+      setUser(session.user);
+      broadcastSessionChange();
+    },
+    [broadcastSessionChange],
+  );
+
   useEffect(() => {
     if (!sessionIdleRefresh || user === null) return;
 
@@ -146,7 +159,7 @@ export function AuthProvider({
     [client, broadcastSessionChange],
   );
 
-  const value = useMemo<AuthState>(
+  const value = useMemo<AuthContextValue>(
     () => ({
       baseUrl,
       user,
@@ -156,14 +169,26 @@ export function AuthProvider({
       logout,
       register,
       refreshSession,
+      client,
+      establishSession,
     }),
-    [baseUrl, user, isLoading, login, logout, register, refreshSession],
+    [
+      baseUrl,
+      user,
+      isLoading,
+      login,
+      logout,
+      register,
+      refreshSession,
+      client,
+      establishSession,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-export function useAuthContext(): AuthState {
+export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) {
     throw new Error("useAuthContext must be used within AuthProvider");
