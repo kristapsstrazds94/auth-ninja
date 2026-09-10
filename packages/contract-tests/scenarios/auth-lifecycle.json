@@ -1,0 +1,52 @@
+{
+  "id": "auth-lifecycle",
+  "name": "register → session → logout → expired session",
+  "variables": {
+    "email": "cycle@test.local",
+    "password": "secure-password-1"
+  },
+  "steps": [
+    {
+      "name": "register",
+      "method": "POST",
+      "path": "/auth/register",
+      "body": { "email": "$email", "password": "$password" },
+      "expect": {
+        "status": 201,
+        "capture": { "session": "cookie" }
+      }
+    },
+    {
+      "name": "session",
+      "method": "GET",
+      "path": "/auth/session",
+      "session": true,
+      "csrf": false,
+      "expect": {
+        "status": 200,
+        "body": {
+          "authenticated": true,
+          "user.email": "$email"
+        }
+      }
+    },
+    {
+      "name": "logout",
+      "method": "POST",
+      "path": "/auth/logout",
+      "session": true,
+      "expect": { "status": 204 }
+    },
+    {
+      "name": "expired session",
+      "method": "GET",
+      "path": "/auth/session",
+      "session": true,
+      "csrf": false,
+      "expect": {
+        "status": 401,
+        "code": "SESSION_EXPIRED"
+      }
+    }
+  ]
+}

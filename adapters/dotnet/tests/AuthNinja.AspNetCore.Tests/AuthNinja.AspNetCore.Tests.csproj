@@ -25,4 +25,10 @@
     <ProjectReference Include="..\..\src\AuthNinja.AspNetCore\AuthNinja.AspNetCore.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\..\..\packages\contract-tests\scenarios\*.json" Link="ContractScenarios\%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

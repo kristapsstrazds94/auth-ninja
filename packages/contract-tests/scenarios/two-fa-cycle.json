@@ -1,0 +1,85 @@
+{
+  "id": "two-fa-cycle",
+  "name": "2FA enroll → confirm → login → verify",
+  "variables": {
+    "email": "2fa-cycle@test.local",
+    "password": "secure-password-1"
+  },
+  "steps": [
+    {
+      "name": "register",
+      "method": "POST",
+      "path": "/auth/register",
+      "body": { "email": "$email", "password": "$password" },
+      "expect": {
+        "status": 201,
+        "capture": { "session": "cookie" }
+      }
+    },
+    {
+      "name": "enroll 2fa",
+      "method": "POST",
+      "path": "/auth/2fa/enroll",
+      "session": true,
+      "expect": {
+        "status": 200,
+        "capture": { "secret": "body.secret" }
+      }
+    },
+    {
+      "name": "confirm 2fa",
+      "method": "POST",
+      "path": "/auth/2fa/confirm",
+      "session": true,
+      "body": { "code": "{{totp:secret}}" },
+      "expect": {
+        "status": 200,
+        "body": { "mfaEnabled": true }
+      }
+    },
+    {
+      "name": "logout",
+      "method": "POST",
+      "path": "/auth/logout",
+      "session": true,
+      "expect": { "status": 204 }
+    },
+    {
+      "name": "login",
+      "method": "POST",
+      "path": "/auth/login",
+      "body": { "email": "$email", "password": "$password" },
+      "expect": {
+        "status": 200,
+        "capture": { "loginToken": "body.loginToken" }
+      }
+    },
+    {
+      "name": "verify 2fa",
+      "method": "POST",
+      "path": "/auth/2fa/verify",
+      "body": {
+        "loginToken": "$loginToken",
+        "code": "{{totp:secret}}"
+      },
+      "expect": {
+        "status": 200,
+        "capture": { "session": "cookie" }
+      }
+    },
+    {
+      "name": "session",
+      "method": "GET",
+      "path": "/auth/session",
+      "session": true,
+      "csrf": false,
+      "expect": {
+        "status": 200,
+        "body": {
+          "user.email": "$email",
+          "user.mfaEnabled": true
+        }
+      }
+    }
+  ]
+}

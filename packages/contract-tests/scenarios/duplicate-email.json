@@ -1,0 +1,27 @@
+{
+  "id": "duplicate-email",
+  "name": "duplicate registration returns generic 409",
+  "variables": {
+    "email": "dup@test.local",
+    "password": "secure-password-1"
+  },
+  "steps": [
+    {
+      "name": "first register",
+      "method": "POST",
+      "path": "/auth/register",
+      "body": { "email": "$email", "password": "$password" },
+      "expect": { "status": 201 }
+    },
+    {
+      "name": "duplicate register",
+      "method": "POST",
+      "path": "/auth/register",
+      "body": { "email": "$email", "password": "$password" },
+      "expect": {
+        "status": 409,
+        "code": "VALIDATION_ERROR"
+      }
+    }
+  ]
+}

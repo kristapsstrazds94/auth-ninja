@@ -1,0 +1,38 @@
+{
+  "id": "csrf-guard",
+  "name": "CSRF required on state-changing routes",
+  "variables": {
+    "email": "csrf-ok@test.local",
+    "password": "secure-password-1"
+  },
+  "steps": [
+    {
+      "name": "register without csrf",
+      "method": "POST",
+      "path": "/auth/register",
+      "body": { "email": "csrf-blocked@test.local", "password": "$password" },
+      "skipCsrf": true,
+      "expect": {
+        "status": 403,
+        "code": "CSRF_INVALID"
+      }
+    },
+    {
+      "name": "fetch csrf",
+      "method": "GET",
+      "path": "/auth/csrf",
+      "csrf": false,
+      "expect": { "status": 200 }
+    },
+    {
+      "name": "register with csrf",
+      "method": "POST",
+      "path": "/auth/register",
+      "body": { "email": "$email", "password": "$password" },
+      "expect": {
+        "status": 201,
+        "capture": { "session": "cookie" }
+      }
+    }
+  ]
+}
