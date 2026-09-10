@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/AuthNinja.AspNetCore/AuthNinja.AspNetCore.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/AuthNinja.AspNetCore.Tests/AuthNinja.AspNetCore.Tests.csproj" />
+  </Folder>
+</Solution>
