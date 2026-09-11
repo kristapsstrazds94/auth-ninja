@@ -18,6 +18,7 @@ import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { homedir } from 'node:os';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -29,6 +30,28 @@ const PUBLISH_ORDER = [
   '@auth-ninja/next',
   'auth-ninja',
 ];
+
+/** Remove _authToken lines that block npm OIDC when no real token is configured. */
+function stripDummyNpmrcAuth() {
+  const candidates = [
+    process.env.NPM_CONFIG_USERCONFIG,
+    join(homedir(), '.npmrc'),
+    join(process.cwd(), '.npmrc'),
+  ].filter(Boolean);
+
+  for (const npmrcPath of new Set(candidates)) {
+    if (!existsSync(npmrcPath)) continue;
+    const original = readFileSync(npmrcPath, 'utf8');
+    const stripped = original
+      .split('\n')
+      .filter((line) => !line.includes('_authToken'))
+      .join('\n');
+    if (stripped !== original) {
+      writeFileSync(npmrcPath, stripped);
+      console.log(`Stripped dummy _authToken from ${npmrcPath}`);
+    }
+  }
+}
 
 /** Strip pnpm-injected npm config so OIDC trusted publishing can engage. */
 function envForPublish(base = process.env) {
@@ -45,6 +68,28 @@ function envForPublish(base = process.env) {
   delete env.NODE_AUTH_TOKEN;
   delete env.NPM_TOKEN;
   return env;
+}
+
+function assertPublishAuthReady(env) {
+  if (env.NPM_TOKEN || env.NODE_AUTH_TOKEN) {
+    console.log('Using NPM_TOKEN / NODE_AUTH_TOKEN for publish');
+    return;
+  }
+
+  const hasOidc =
+    Boolean(env.ACTIONS_ID_TOKEN_REQUEST_URL) &&
+    Boolean(env.ACTIONS_ID_TOKEN_REQUEST_TOKEN);
+
+  if (!hasOidc) {
+    console.error(
+      'No NPM_TOKEN and no OIDC env vars — configure npm trusted publishers ' +
+        'on npmjs.com or add an NPM_TOKEN repository secret.',
+    );
+    process.exit(1);
+  }
+
+  console.log('Using npm OIDC trusted publishing');
+  console.log(`npm: ${execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim()}`);
 }
 
 function loadPackages() {
@@ -137,9 +182,12 @@ function publishPackage({ name, version, dir, manifest }, versions, env) {
 }
 
 function main() {
+  stripDummyNpmrcAuth();
+  const env = envForPublish();
+  assertPublishAuthReady(env);
+
   const packages = loadPackages();
   const versions = new Map([...packages.values()].map((p) => [p.name, p.version]));
-  const env = envForPublish();
   let publishedAny = false;
 
   for (const name of PUBLISH_ORDER) {

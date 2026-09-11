@@ -54,6 +54,8 @@ describe("release readiness (task 7.3)", () => {
     const workflow = readFileSync(join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("scripts/publish-oidc.mjs");
     expect(workflow).toContain("id-token: write");
+    expect(workflow).toContain("hasChangesets == 'false'");
+    expect(workflow).not.toMatch(/changesets\/action@v1[\s\S]*publish:/);
   });
 
   describe.each(PUBLISHABLE_PACKAGES)("$name", ({ dir, files }) => {
