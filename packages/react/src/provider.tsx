@@ -63,12 +63,21 @@ export function AuthProvider({
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<Error | null>(null);
   const sessionSyncRef = useRef<ReturnType<typeof createSessionSync> | null>(null);
 
   const refreshSession = useCallback(async (): Promise<SessionResponse | null> => {
-    const session = await fetchSession(client);
-    setUser(session?.user ?? null);
-    return session;
+    try {
+      const session = await fetchSession(client);
+      setUser(session?.user ?? null);
+      setSessionError(null);
+      return session;
+    } catch (error) {
+      const normalized =
+        error instanceof Error ? error : new Error("Failed to load session.");
+      setSessionError(normalized);
+      throw error;
+    }
   }, [client]);
 
   useEffect(() => {
@@ -77,6 +86,8 @@ export function AuthProvider({
     void (async () => {
       try {
         await refreshSession();
+      } catch {
+        // sessionError is set in refreshSession
       } finally {
         if (!cancelled) {
           setIsLoading(false);
@@ -148,6 +159,7 @@ export function AuthProvider({
   const logout = useCallback(async (): Promise<void> => {
     await logoutRequest(client);
     setUser(null);
+    setSessionError(null);
     broadcastSessionChange();
   }, [client, broadcastSessionChange]);
 
@@ -167,6 +179,7 @@ export function AuthProvider({
       user,
       isAuthenticated: user !== null,
       isLoading,
+      sessionError,
       login,
       logout,
       register,
@@ -178,6 +191,7 @@ export function AuthProvider({
       baseUrl,
       user,
       isLoading,
+      sessionError,
       login,
       logout,
       register,

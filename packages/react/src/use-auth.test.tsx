@@ -99,6 +99,20 @@ describe("useAuth", () => {
     expect(auth.isLoading).toBe(false);
     expect(auth.isAuthenticated).toBe(false);
     expect(auth.user).toBeNull();
+    expect(auth.sessionError).toBeNull();
+  });
+
+  it("records sessionError when the session check fails", async () => {
+    const fetchFn = vi.fn(async () =>
+      Response.json({ code: "RATE_LIMITED", message: "Too many requests." }, { status: 429 }),
+    );
+
+    await renderProvider(fetchFn);
+
+    expect(auth.isLoading).toBe(false);
+    expect(auth.isAuthenticated).toBe(false);
+    expect(auth.sessionError).toBeInstanceOf(Error);
+    expect(auth.sessionError?.message).toBe("Too many requests.");
   });
 
   it("throttles idle session refresh on repeated clicks", async () => {

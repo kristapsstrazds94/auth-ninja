@@ -1,0 +1,59 @@
+"use client";
+
+import { useState } from "react";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@auth-ninja/react";
+import { DemoNav } from "@/components/demo-nav";
+import { Spinner } from "@/components/spinner";
+import { formatAuthError } from "@/lib/auth-error";
+import { isAuthLayoutPath } from "@/lib/auth-routes";
+
+export function DemoShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const { isLoading, sessionError, refreshSession } = useAuth();
+  const [retrying, setRetrying] = useState(false);
+
+  const pending = isLoading || retrying;
+  const hideNav = isAuthLayoutPath(pathname);
+
+  async function handleRetry() {
+    setRetrying(true);
+    try {
+      await refreshSession();
+    } catch {
+      // sessionError is updated by AuthProvider
+    } finally {
+      setRetrying(false);
+    }
+  }
+
+  if (pending) {
+    return (
+      <div className="app-shell-loading">
+        <Spinner label="Loading session…" centered />
+      </div>
+    );
+  }
+
+  if (sessionError) {
+    return (
+      <div className="app-shell-loading">
+        <div className="card stack app-shell-error">
+          <h1>Unable to load session</h1>
+          <p className="muted">The demo could not reach the auth API. Check that the server is running.</p>
+          <p className="error">{formatAuthError(sessionError)}</p>
+          <button type="button" className="btn" onClick={() => void handleRetry()}>
+            Try again
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {hideNav ? null : <DemoNav />}
+      <main className={hideNav ? "main-auth" : undefined}>{children}</main>
+    </>
+  );
+}

@@ -16,11 +16,7 @@ import {
 } from "@/lib/webauthn";
 
 export function PasskeysPage() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <p className="muted">Checking session…</p>;
-  }
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return <PasskeyLoginPanel />;
@@ -59,27 +55,34 @@ function PasskeyLoginPanel() {
   }
 
   return (
-    <div className="card stack">
-      <h1>Passkey login</h1>
-      <p className="muted">
-        Sign in with a registered passkey. Email is optional for discoverable credentials.
-      </p>
-      <label>
-        Email (optional)
-        <input
-          type="email"
-          autoComplete="username"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-      </label>
-      {error ? <p className="error">{error}</p> : null}
-      <button type="button" disabled={busy} onClick={() => void handlePasskeyLogin()}>
-        {busy ? "Waiting for passkey…" : "Sign in with passkey"}
-      </button>
-      <p className="muted">
-        Prefer password login? <Link href="/login">Log in</Link>
-      </p>
+    <div className="auth-layout">
+      <div className="card stack">
+        <header className="page-header">
+          <h1>Passkey login</h1>
+          <p>
+            Sign in with a registered passkey. Email is optional when using discoverable
+            credentials.
+          </p>
+        </header>
+
+        <label>
+          Email (optional)
+          <input
+            type="email"
+            autoComplete="username"
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+          />
+        </label>
+        {error ? <p className="error">{error}</p> : null}
+        <button type="button" className="btn btn-block" disabled={busy} onClick={() => void handlePasskeyLogin()}>
+          {busy ? "Waiting for passkey…" : "Sign in with passkey"}
+        </button>
+        <p className="muted">
+          Prefer password login? <Link href="/login">Log in</Link>
+        </p>
+      </div>
     </div>
   );
 }
@@ -133,21 +136,37 @@ function PasskeyManagePanel() {
 
   return (
     <div className="card stack">
-      <h1>Passkeys</h1>
-      <button type="button" disabled={busy} onClick={() => void handleRegister()}>
-        {busy ? "Waiting for passkey…" : "Register passkey"}
-      </button>
+      <header className="page-header">
+        <h1>Passkeys</h1>
+        <p>Register WebAuthn credentials for passwordless sign-in on supported devices.</p>
+      </header>
+
+      <div className="row">
+        <button type="button" className="btn" disabled={busy} onClick={() => void handleRegister()}>
+          {busy ? "Waiting for passkey…" : "Register passkey"}
+        </button>
+        <span className={`badge ${items.length > 0 ? "badge-success" : "badge-muted"}`}>
+          {items.length > 0 ? `${items.length} registered` : "None registered"}
+        </span>
+      </div>
+
       {items.length === 0 ? (
-        <p className="muted">No passkeys registered yet.</p>
+        <div className="stat-card">
+          <p className="stat-card-title">No passkeys yet</p>
+          <p className="stat-card-desc">
+            Click &quot;Register passkey&quot; to add your first credential. You can remove
+            credentials at any time.
+          </p>
+        </div>
       ) : (
-        <ul>
+        <ul className="credential-list">
           {items.map((item) => (
-            <li key={item.credentialId} className="row">
+            <li key={item.credentialId} className="credential-item">
               <code>{item.credentialId}</code>
               <span className="muted">{new Date(item.createdAt).toLocaleString()}</span>
               <button
                 type="button"
-                className="secondary"
+                className="btn btn-secondary"
                 disabled={busy}
                 onClick={() => void handleRemove(item.credentialId)}
               >
@@ -157,6 +176,7 @@ function PasskeyManagePanel() {
           ))}
         </ul>
       )}
+
       {error ? <p className="error">{error}</p> : null}
     </div>
   );

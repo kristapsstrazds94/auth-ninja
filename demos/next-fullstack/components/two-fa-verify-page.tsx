@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { use2FA } from "@auth-ninja/react";
+import { AuthPageShell } from "@/components/auth-page-shell";
 import { formatAuthError } from "@/lib/auth-error";
 
 export function TwoFaVerifyPage() {
@@ -48,31 +49,38 @@ function TwoFaVerifyForm({ loginToken }: { loginToken: string }) {
   }
 
   return (
-    <div className="card stack">
-      <h1>Two-factor verification</h1>
-      <p className="muted">Enter the 6-digit code from your authenticator app.</p>
-      <form onSubmit={(event) => void handleSubmit(event)}>
-        <label>
-          TOTP code
-          <input
-            type="text"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            pattern="[0-9]{6}"
-            maxLength={6}
-            value={code}
-            onChange={(event) => setCode(event.target.value)}
-            required
-          />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <button type="submit" disabled={busy}>
-          {busy ? "Verifying…" : "Verify"}
-        </button>
-      </form>
-      <p className="muted">
-        <Link href="/login">Back to login</Link>
-      </p>
-    </div>
+    <AuthPageShell>
+      <div className="card stack">
+        <header className="page-header">
+          <h1>Two-factor verification</h1>
+          <p>Enter the 6-digit code from your authenticator app to complete sign-in.</p>
+        </header>
+
+        <form onSubmit={(event) => void handleSubmit(event)}>
+          <label>
+            TOTP code
+            <input
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength={6}
+              placeholder="000000"
+              value={code}
+              onChange={(event) => setCode(event.target.value)}
+              required
+            />
+          </label>
+          {error ? <p className="error">{error}</p> : null}
+          <button type="submit" className="btn btn-block" disabled={busy}>
+            {busy ? "Verifying…" : "Verify and continue"}
+          </button>
+        </form>
+
+        <p className="muted">
+          <Link href="/login">Back to login</Link>
+        </p>
+      </div>
+    </AuthPageShell>
   );
 }

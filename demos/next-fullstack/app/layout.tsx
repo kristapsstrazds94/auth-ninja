@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { DemoAuthProvider } from "@/components/demo-auth-provider";
-import { DemoNav } from "@/components/demo-nav";
+import { DemoShell } from "@/components/demo-shell";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Auth-Ninja Next demo",
-  description: "Throwaway full-stack demo for manual auth testing",
+  title: "Auth-Ninja Demo",
+  description: "Full-stack reference app for secure authentication with Auth-Ninja",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -13,8 +13,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body>
         <DemoAuthProvider>
-          <DemoNav />
-          <main>{children}</main>
+          <DemoShell>{children}</DemoShell>
         </DemoAuthProvider>
       </body>
     </html>

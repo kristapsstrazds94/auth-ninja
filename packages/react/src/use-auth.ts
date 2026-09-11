@@ -12,6 +12,8 @@ export type AuthState = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** Set when the initial session check or an explicit refresh fails (non-expired). */
+  sessionError: Error | null;
   login(input: LoginInput): Promise<LoginResult>;
   logout(): Promise<void>;
   register(input: RegisterInput): Promise<SessionResponse>;
@@ -25,6 +27,7 @@ export function useAuth(): AuthState {
     user,
     isAuthenticated,
     isLoading,
+    sessionError,
     login,
     logout,
     register,
@@ -36,6 +39,7 @@ export function useAuth(): AuthState {
     user,
     isAuthenticated,
     isLoading,
+    sessionError,
     login,
     logout,
     register,
