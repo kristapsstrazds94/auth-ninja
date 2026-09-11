@@ -24,6 +24,16 @@ pnpm build
 pnpm test
 ```
 
+## Release
+
+Publishable packages share version **0.1.0** via [Changesets](https://github.com/changesets/changesets). See [`.changeset/README.md`](.changeset/README.md) for the release workflow.
+
+```bash
+pnpm changeset          # add a changeset after user-facing changes
+pnpm version-packages   # bump versions and update CHANGELOGs
+pnpm release            # build and publish to npm (requires NPM_TOKEN)
+```
+
 ## Security defaults
 
 - HttpOnly session cookies (never localStorage tokens)

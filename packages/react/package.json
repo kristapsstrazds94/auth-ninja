@@ -1,6 +1,6 @@
 {
   "name": "@auth-ninja/react",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "description": "Headless React hooks and guards for Auth-Ninja (no UI components)",
   "type": "module",
@@ -16,13 +16,22 @@
       "import": "./dist/vite-plugin.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "pnpm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kristapsstrazds94/auth-ninja.git",
+    "directory": "packages/react"
   },
   "dependencies": {
     "@auth-ninja/core": "workspace:*",

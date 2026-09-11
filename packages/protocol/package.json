@@ -1,6 +1,6 @@
 {
   "name": "@auth-ninja/protocol",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "license": "MIT",
   "description": "OpenAPI contract and shared auth event schemas",
   "type": "module",
@@ -13,13 +13,23 @@
     },
     "./openapi.json": "./openapi.json"
   },
-  "files": ["dist", "openapi.json", "README.md"],
+  "files": [
+    "dist",
+    "openapi.json",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "lint": "node -e \"process.exit(0)\"",
-    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\""
+    "clean": "node -e \"require('fs').rmSync('dist',{recursive:true,force:true})\"",
+    "prepublishOnly": "pnpm run build"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kristapsstrazds94/auth-ninja.git",
+    "directory": "packages/protocol"
   },
   "devDependencies": {
     "@apidevtools/swagger-parser": "^10.1.1",

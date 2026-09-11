@@ -1,7 +1,7 @@
 {
   "name": "@auth-ninja/demo-next-fullstack",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "tsc --noEmit",

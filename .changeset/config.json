@@ -1,0 +1,19 @@
+{
+  "$schema": "https://unpkg.com/@changesets/config@3.0.0/schema.json",
+  "changelog": "@changesets/cli/changelog",
+  "commit": false,
+  "fixed": [
+    [
+      "@auth-ninja/core",
+      "@auth-ninja/protocol",
+      "@auth-ninja/react",
+      "@auth-ninja/next",
+      "auth-ninja"
+    ]
+  ],
+  "linked": [],
+  "access": "public",
+  "baseBranch": "main",
+  "updateInternalDependencies": "patch",
+  "ignore": ["@auth-ninja/contract-tests"]
+}
