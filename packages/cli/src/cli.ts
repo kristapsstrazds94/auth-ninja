@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { parseDemoArgs, runDemo } from "./commands/demo.js";
 import { runDoctorCli, type DoctorOptions } from "./commands/doctor.js";
 import { runInit } from "./commands/init.js";
 import { runKeysGenerate } from "./commands/keys.js";
@@ -14,7 +15,7 @@ auth-ninja — secure authentication toolkit
 Usage:
   auth-ninja init [--stack next|vite|dotnet] [--cwd <path>] [--dry-run]
   auth-ninja doctor [--cwd <path>] [--production] [--strict]
-  auth-ninja demo              Start local demo stack (task 6.1)
+  auth-ninja demo [--stack next|vite|dotnet] [--cwd <path>]
   auth-ninja keys generate     Output a secure AUTH_NINJA_SECRET
 
 Run auth-ninja init in your app root to scaffold .env and wire adapters.
@@ -88,6 +89,9 @@ async function main(): Promise<void> {
       process.exit(exitCode);
       break;
     }
+    case "demo":
+      await runDemo(parseDemoArgs(args.slice(1)));
+      break;
     case "keys": {
       const subcommand = args[1] ?? "generate";
       if (subcommand === "generate") {

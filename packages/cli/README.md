@@ -51,4 +51,20 @@ auth-ninja keys generate
 
 Copy the line into your `.env` file. Do not commit the generated value.
 
-Other commands (`demo`) are implemented in later tasks — see `docs/TASKS.md` phase 6.
+### `auth-ninja demo`
+
+Starts a local Auth-Ninja demo stack from the monorepo (requires `pnpm install && pnpm build` first):
+
+- **`next`** (default) — Next.js full-stack demo at [http://localhost:3000](http://localhost:3000)
+- **`vite`** — Vite SPA + Next.js auth API at [http://localhost:5173](http://localhost:5173)
+- **`dotnet`** — React SPA + .NET API at [http://localhost:5174](http://localhost:5174)
+
+PostgreSQL is required. When `AUTH_NINJA_DATABASE_URL` is unset or unreachable, the command starts the E2E Docker Compose Postgres service automatically.
+
+```bash
+auth-ninja demo
+auth-ninja demo --stack vite
+auth-ninja demo --stack dotnet
+```
+
+Uses a fixed demo `AUTH_NINJA_SECRET` test fixture — local development only, never production.
