@@ -21,11 +21,12 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
+      # No registry-url here — setup-node writes an empty _authToken line that
+      # blocks npm OIDC trusted publishing when NPM_TOKEN is unset.
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: pnpm
-          registry-url: https://registry.npmjs.org
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -45,4 +46,6 @@ jobs:
           title: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Optional classic token. When unset, changesets uses npm OIDC trusted
+          # publishing (requires @auth-ninja org + per-package trusted publishers).
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

@@ -31,7 +31,7 @@ Publishable packages share version **0.1.0** via [Changesets](https://github.com
 ```bash
 pnpm changeset          # add a changeset after user-facing changes
 pnpm version-packages   # bump versions and update CHANGELOGs
-pnpm release            # build and publish to npm (requires NPM_TOKEN)
+pnpm release            # build and publish to npm (OIDC or NPM_TOKEN)
 ```
 
 ## Security defaults
