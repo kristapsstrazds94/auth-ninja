@@ -18,7 +18,7 @@ const PUBLISHABLE_PACKAGES = [
     dir: "packages/next",
     files: ["dist", "drizzle", "README.md"],
   },
-  { name: "auth-ninja", dir: "packages/cli", files: ["dist", "README.md"] },
+  { name: "@auth-ninja/cli", dir: "packages/cli", files: ["dist", "README.md"] },
 ] as const;
 
 const RELEASE_VERSION = "0.1.0";

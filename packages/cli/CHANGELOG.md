@@ -1,4 +1,4 @@
-# auth-ninja
+# @auth-ninja/cli
 
 ## 0.1.0
 

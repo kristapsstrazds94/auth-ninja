@@ -1,6 +1,6 @@
-# auth-ninja CLI
+# @auth-ninja/cli
 
-Install globally or run with `pnpm dlx auth-ninja`.
+Install globally or run with `pnpm dlx @auth-ninja/cli` (the `auth-ninja` command is unchanged).
 
 ## Commands
 

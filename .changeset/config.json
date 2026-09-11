@@ -8,7 +8,7 @@
       "@auth-ninja/protocol",
       "@auth-ninja/react",
       "@auth-ninja/next",
-      "auth-ninja"
+      "@auth-ninja/cli"
     ]
   ],
   "linked": [],

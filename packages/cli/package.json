@@ -1,5 +1,5 @@
 {
-  "name": "auth-ninja",
+  "name": "@auth-ninja/cli",
   "version": "0.1.0",
   "license": "MIT",
   "description": "CLI for scaffolding and validating Auth-Ninja in consumer projects",

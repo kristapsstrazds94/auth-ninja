@@ -13,7 +13,7 @@ Secure, reusable authentication for internal projects.
 | `@auth-ninja/protocol` | OpenAPI contract |
 | `@auth-ninja/react` | Headless `AuthProvider`, `useAuth`, `RequireAuth` |
 | `@auth-ninja/next` | Next.js route handlers + middleware |
-| `auth-ninja` | CLI (`init`, `doctor`, `demo`, `keys`) |
+| `@auth-ninja/cli` | CLI (`init`, `doctor`, `demo`, `keys`) — run as `auth-ninja` |
 | `AuthNinja.AspNetCore` | .NET adapter (`adapters/dotnet/`) |
 
 ## Quick start (development)

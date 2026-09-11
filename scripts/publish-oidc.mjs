@@ -28,8 +28,10 @@ const PUBLISH_ORDER = [
   '@auth-ninja/core',
   '@auth-ninja/react',
   '@auth-ninja/next',
-  'auth-ninja',
+  '@auth-ninja/cli',
 ];
+
+const OUR_REPO_MARKER = 'kristapsstrazds94/auth-ninja';
 
 /** Remove _authToken lines that block npm OIDC when no real token is configured. */
 function stripDummyNpmrcAuth() {
@@ -128,28 +130,50 @@ function resolveWorkspaceDeps(manifest, versions) {
   return resolved;
 }
 
-function npmViewVersion(name, env) {
+function npmViewExact(name, version, env) {
   try {
-    return execFileSync('npm', ['view', name, 'version'], {
+    const raw = execFileSync('npm', ['view', `${name}@${version}`, '--json'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
       env,
     }).trim();
+    return JSON.parse(raw);
   } catch {
     return null;
   }
 }
 
+function registryRepository(info) {
+  const repo = info?.repository;
+  if (typeof repo === 'string') return repo;
+  if (repo && typeof repo === 'object' && typeof repo.url === 'string') {
+    return repo.url;
+  }
+  return '';
+}
+
+function isOurPackagePublished(name, version, env) {
+  const info = npmViewExact(name, version, env);
+  if (!info) return false;
+
+  const repo = registryRepository(info);
+  if (!repo.includes(OUR_REPO_MARKER)) {
+    throw new Error(
+      `${name}@${version} exists on npm but belongs to another repository (${repo || 'unknown'}). ` +
+        'Rename the local package or unpublish the conflicting release.',
+    );
+  }
+
+  return true;
+}
+
 function publishPackage({ name, version, dir, manifest }, versions, env) {
-  const published = npmViewVersion(name, env);
-  if (published === version) {
+  if (isOurPackagePublished(name, version, env)) {
     console.log(`${name}@${version} is already on the registry, skipping`);
     return false;
   }
 
-  console.log(
-    `Publishing ${name}@${version} (registry currently at: ${published ?? 'none'})`,
-  );
+  console.log(`Publishing ${name}@${version}`);
 
   const pkgPath = join(dir, 'package.json');
   const original = readFileSync(pkgPath, 'utf8');
