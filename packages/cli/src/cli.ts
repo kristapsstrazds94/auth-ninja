@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { runDoctorCli, type DoctorOptions } from "./commands/doctor.js";
 import { runInit } from "./commands/init.js";
 import type { AuthStack } from "./detect-stack.js";
 
@@ -11,7 +12,7 @@ auth-ninja — secure authentication toolkit
 
 Usage:
   auth-ninja init [--stack next|vite|dotnet] [--cwd <path>] [--dry-run]
-  auth-ninja doctor     Validate configuration (task 5.2)
+  auth-ninja doctor [--cwd <path>] [--production] [--strict]
   auth-ninja demo       Start local demo stack (task 6.1)
   auth-ninja keys       Generate secrets (task 5.3)
 
@@ -48,6 +49,29 @@ function parseInitArgs(argv: string[]): {
   return options;
 }
 
+function parseDoctorArgs(argv: string[]): DoctorOptions {
+  const options: DoctorOptions = {};
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--cwd") {
+      options.cwd = argv[index + 1];
+      index += 1;
+      continue;
+    }
+    if (arg === "--production") {
+      options.production = true;
+      continue;
+    }
+    if (arg === "--strict") {
+      options.strict = true;
+      continue;
+    }
+  }
+
+  return options;
+}
+
 async function main(): Promise<void> {
   switch (command) {
     case "help":
@@ -58,6 +82,11 @@ async function main(): Promise<void> {
     case "init":
       await runInit(parseInitArgs(args.slice(1)));
       break;
+    case "doctor": {
+      const exitCode = await runDoctorCli(parseDoctorArgs(args.slice(1)));
+      process.exit(exitCode);
+      break;
+    }
     default:
       console.error(`Unknown command: ${command}\n`);
       console.log(HELP);
