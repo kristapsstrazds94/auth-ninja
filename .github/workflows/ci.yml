@@ -34,13 +34,18 @@ jobs:
   semgrep:
     name: Semgrep auth rules
     runs-on: ubuntu-latest
-    container:
-      image: semgrep/semgrep
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Semgrep
+        run: pip install semgrep
+
       - name: Scan packages and adapters
-        run: semgrep --config .semgrep/auth-ninja.yml --config .semgrep/auth-ninja-dotnet.yml --error packages adapters
+        run: node scripts/semgrep-scan.mjs
 
       - name: Verify Semgrep rule tests
         run: node scripts/semgrep-test.mjs
