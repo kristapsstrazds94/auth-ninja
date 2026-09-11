@@ -16,7 +16,7 @@ Follow the prompts, commit the generated file under `.changeset/`, and open a PR
 
 1. Merge PRs with changeset files to `main`.
 2. The **Release** GitHub Action opens a "Version packages" PR (or publishes when versions are bumped).
-3. Merge the version PR — CI runs `pnpm build`, then `changeset publish`.
+3. Merge the version PR — CI runs `pnpm build`, then `node scripts/publish-oidc.mjs` (direct `npm publish` for OIDC; see `scripts/publish-oidc.mjs`).
 
 Publishable packages (`@auth-ninja/*` and `auth-ninja` CLI) share a **fixed** version line — one bump applies to all.
 

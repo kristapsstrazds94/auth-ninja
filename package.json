@@ -13,7 +13,7 @@
     "semgrep:test": "node scripts/semgrep-test.mjs",
     "changeset": "changeset",
     "version-packages": "changeset version",
-    "release": "pnpm build && changeset publish"
+    "release": "pnpm build && node scripts/publish-oidc.mjs"
   },
   "repository": {
     "type": "git",

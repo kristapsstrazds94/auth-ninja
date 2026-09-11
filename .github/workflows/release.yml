@@ -13,6 +13,7 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+      # Required for npm OIDC trusted publishing (short-lived identity token).
       id-token: write
     steps:
       - uses: actions/checkout@v4
@@ -21,12 +22,17 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      # No registry-url here — setup-node writes an empty _authToken line that
-      # blocks npm OIDC trusted publishing when NPM_TOKEN is unset.
+      # No registry-url — setup-node writes an empty _authToken line that blocks
+      # npm OIDC trusted publishing when NPM_TOKEN is unset.
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
+
+      # OIDC trusted publishing requires npm >= 11.5.1. Pin 11.x — npm 12 has
+      # breaking changes around git-checks and publish behaviour.
+      - name: Pin npm for OIDC trusted publishing
+        run: npm install -g --ignore-scripts npm@11
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -37,15 +43,26 @@ jobs:
       - name: Test
         run: pnpm test
 
+      - name: Verify OIDC environment
+        run: |
+          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
+            echo "::error::OIDC env vars missing — check id-token: write permission"
+            exit 1
+          fi
+          echo "OIDC env vars present"
+          echo "npm: $(npm --version)"
+
       - name: Create release PR or publish to npm
         uses: changesets/action@v1
         with:
           version: pnpm version-packages
-          publish: pnpm release
+          # Do not use `pnpm release` — the pnpm → changeset → pnpm chain breaks
+          # OIDC auth. Build already ran above; publish calls npm directly.
+          publish: node scripts/publish-oidc.mjs
           commit: "chore(release): version packages"
           title: "chore(release): version packages"
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          # Optional classic token. When unset, changesets uses npm OIDC trusted
-          # publishing (requires @auth-ninja org + per-package trusted publishers).
+          # Optional classic token. When unset, npm uses OIDC trusted publishing
+          # (requires per-package trusted publishers on npmjs.com).
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
