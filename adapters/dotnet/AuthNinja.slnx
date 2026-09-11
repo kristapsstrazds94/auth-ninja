@@ -5,4 +5,8 @@
   <Folder Name="/tests/">
     <Project Path="tests/AuthNinja.AspNetCore.Tests/AuthNinja.AspNetCore.Tests.csproj" />
   </Folder>
+  <Folder Name="/demos/">
+    <Project Path="../../demos/dotnet-spa/api/DemoApi.csproj" />
+    <Project Path="../../demos/dotnet-spa/api/tests/DemoApi.Tests.csproj" />
+  </Folder>
 </Solution>
