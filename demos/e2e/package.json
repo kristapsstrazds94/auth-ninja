@@ -1,0 +1,21 @@
+{
+  "name": "@auth-ninja/demo-e2e",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "test": "node ./scripts/run-e2e.mjs",
+    "test:install": "playwright install chromium --with-deps",
+    "postgres:up": "docker compose up -d --wait",
+    "postgres:down": "docker compose down -v",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@auth-ninja/core": "workspace:*",
+    "@playwright/test": "^1.49.1",
+    "@types/node": "^22.10.2",
+    "@types/pg": "^8.11.10",
+    "pg": "^8.13.1",
+    "typescript": "^5.7.2"
+  }
+}

@@ -1,0 +1,14 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: auth_ninja
+      POSTGRES_PASSWORD: auth_ninja
+      POSTGRES_DB: auth_ninja_e2e
+    ports:
+      - "0:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U auth_ninja -d auth_ninja_e2e"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
