@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { createAuthMiddleware } from "@auth-ninja/next";
-import { getAuthNinja } from "./lib/auth-ninja.js";
+import { getAuthNinja } from "./lib/auth-ninja";
 
 export async function middleware(request: NextRequest) {
   const auth = await getAuthNinja();

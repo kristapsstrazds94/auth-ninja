@@ -5,14 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b",
+    "build:app": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -b --noEmit",
     "lint": "node -e \"process.exit(0)\""
   },
   "dependencies": {
-    "@auth-ninja/core": "workspace:*",
     "@auth-ninja/react": "workspace:*",
     "@simplewebauthn/browser": "^11.0.0",
     "react": "^19.0.0",
