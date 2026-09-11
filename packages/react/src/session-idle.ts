@@ -47,6 +47,7 @@ export function createIdleRefreshController(
     options.periodicRefreshMs ?? idleRefreshIntervalMs(options.idleMinutes);
 
   let periodicTimer: ReturnType<typeof setInterval> | null = null;
+  /** 0 = no activity refresh yet; otherwise timestamp of last refresh. */
   let lastActivityRefresh = 0;
   let stopped = true;
 
@@ -58,7 +59,7 @@ export function createIdleRefreshController(
     if (stopped) return;
 
     const now = Date.now();
-    if (now - lastActivityRefresh < throttleMs) return;
+    if (lastActivityRefresh !== 0 && now - lastActivityRefresh < throttleMs) return;
 
     lastActivityRefresh = now;
     triggerRefresh();

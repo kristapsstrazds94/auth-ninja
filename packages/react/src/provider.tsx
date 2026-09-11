@@ -115,8 +115,10 @@ export function AuthProvider({
     [broadcastSessionChange],
   );
 
+  const isAuthenticated = user !== null;
+
   useEffect(() => {
-    if (!sessionIdleRefresh || user === null) return;
+    if (!sessionIdleRefresh || !isAuthenticated) return;
 
     const controller = createIdleRefreshController({
       idleMinutes: sessionIdleMinutes,
@@ -129,7 +131,7 @@ export function AuthProvider({
     return () => {
       controller.stop();
     };
-  }, [sessionIdleRefresh, sessionIdleMinutes, user, refreshSession]);
+  }, [sessionIdleRefresh, sessionIdleMinutes, isAuthenticated, refreshSession]);
 
   const login = useCallback(
     async (input: LoginInput): Promise<LoginResult> => {

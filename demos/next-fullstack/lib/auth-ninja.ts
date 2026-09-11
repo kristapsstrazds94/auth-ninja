@@ -6,17 +6,21 @@ import {
   type AuthNinjaContext,
 } from "@auth-ninja/next";
 
-let authPromise: Promise<AuthNinjaContext> | undefined;
+type AuthNinjaGlobal = typeof globalThis & {
+  __authNinjaPromise?: Promise<AuthNinjaContext>;
+};
 
-/** Shared Auth-Ninja context — migrations run once per process. */
+const globalForAuth = globalThis as AuthNinjaGlobal;
+
+/** Shared Auth-Ninja context — survives Next.js per-route webpack bundles in dev. */
 export async function getAuthNinja(): Promise<AuthNinjaContext> {
-  if (!authPromise) {
-    authPromise = (async () => {
+  if (!globalForAuth.__authNinjaPromise) {
+    globalForAuth.__authNinjaPromise = (async () => {
       const config = loadAuthNinjaConfig();
       const { db, client } = createAuthDb(config.databaseUrl);
       await runAuthMigrations({ db, client });
       return createAuthNinjaContext({ config, db });
     })();
   }
-  return authPromise;
+  return globalForAuth.__authNinjaPromise;
 }

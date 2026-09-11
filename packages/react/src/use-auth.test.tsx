@@ -101,6 +101,63 @@ describe("useAuth", () => {
     expect(auth.user).toBeNull();
   });
 
+  it("throttles idle session refresh on repeated clicks", async () => {
+    vi.useFakeTimers();
+
+    try {
+      let sessionCalls = 0;
+      const fetchFn = vi.fn(
+        asFetchMock(async (input) => {
+          const url = String(input);
+          if (url.endsWith("/auth/session")) {
+            sessionCalls += 1;
+            return Response.json({
+              authenticated: true,
+              user: { id: "user-1", email: `a@test.local?v=${sessionCalls}` },
+            });
+          }
+          return new Response(null, { status: 404 });
+        }),
+      );
+
+      await act(async () => {
+        root.render(
+          createElement(
+            AuthProvider,
+            {
+              baseUrl: BASE_URL,
+              fetchFn,
+              sessionIdleRefresh: true,
+              sessionIdleMinutes: 15,
+            },
+            createElement(Probe),
+          ),
+        );
+      });
+
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      const callsAfterMount = sessionCalls;
+      expect(callsAfterMount).toBe(1);
+
+      await act(async () => {
+        window.dispatchEvent(new MouseEvent("mousedown"));
+        await Promise.resolve();
+      });
+      expect(sessionCalls).toBe(callsAfterMount + 1);
+
+      await act(async () => {
+        window.dispatchEvent(new MouseEvent("mousedown"));
+        await Promise.resolve();
+      });
+      expect(sessionCalls).toBe(callsAfterMount + 1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("logs in and updates session state", async () => {
     const fetchFn = vi.fn(
       asFetchMock(async (input, init) => {

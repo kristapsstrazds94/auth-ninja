@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   deletePasskey,
   listPasskeys,
@@ -72,12 +72,15 @@ export function usePasskey(): PasskeyState {
     [client, refreshSession],
   );
 
-  return {
-    registerBegin,
-    registerFinish,
-    loginBegin,
-    loginFinish,
-    list,
-    remove,
-  };
+  return useMemo(
+    () => ({
+      registerBegin,
+      registerFinish,
+      loginBegin,
+      loginFinish,
+      list,
+      remove,
+    }),
+    [registerBegin, registerFinish, loginBegin, loginFinish, list, remove],
+  );
 }
