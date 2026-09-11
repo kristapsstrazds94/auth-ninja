@@ -1,7 +1,6 @@
 import { createTwoFaDisableHandler } from "@auth-ninja/next";
-import { getAuthNinja } from "../../../lib/auth-ninja";
+import { withAuthGuard } from "@/lib/with-auth-guard";
 
-export async function DELETE(request: Request) {
-  const auth = await getAuthNinja();
-  return createTwoFaDisableHandler(auth)(request);
-}
+export const DELETE = withAuthGuard((request, auth) =>
+  createTwoFaDisableHandler(auth)(request),
+);

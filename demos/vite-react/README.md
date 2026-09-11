@@ -16,6 +16,12 @@ pnpm --filter @auth-ninja/demo-vite-react dev
 
 The Vite dev server proxies `/auth/*` to the backend so session cookies stay same-origin.
 
+Production build:
+
+```bash
+pnpm --filter @auth-ninja/demo-vite-react build:app
+```
+
 ## Pages
 
 | Route | Purpose |

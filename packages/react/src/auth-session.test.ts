@@ -1,4 +1,4 @@
-import { AuthNinjaError } from "@auth-ninja/core";
+import { AuthNinjaError } from "@auth-ninja/core/errors";
 import { describe, expect, it, vi } from "vitest";
 import { createAuthClient } from "./auth-client.js";
 import { fetchSession, login, logout, register } from "./auth-session.js";

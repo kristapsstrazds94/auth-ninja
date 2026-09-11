@@ -32,17 +32,3 @@ export function authNinjaViteEnvPlugin(
     },
   };
 }
-
-export {
-  collectViteAuthEnv,
-  readViteAuthClientConfig,
-  validateViteAuthEnv,
-  viteAuthEnvSchema,
-  viteAuthEnvToClientConfig,
-  VITE_AUTH_ALLOWED_KEYS,
-  VITE_AUTH_ENV_PREFIX,
-  ViteAuthEnvValidationError,
-  type ViteAuthClientConfig,
-  type ViteAuthEnv,
-  type ViteAuthEnvKey,
-} from "./vite-auth-env.js";

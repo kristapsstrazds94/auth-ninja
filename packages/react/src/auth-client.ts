@@ -4,7 +4,7 @@ import {
   createAuthError,
   type AuthErrorResponse,
   type AuthNinjaErrorCode,
-} from "@auth-ninja/core";
+} from "@auth-ninja/core/errors";
 
 /** CSRF header name — matches OpenAPI `csrfHeader` security scheme. */
 export const AUTH_CSRF_HEADER = "X-CSRF-Token";

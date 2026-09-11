@@ -1,7 +1,4 @@
 import { createPasskeyListHandler } from "@auth-ninja/next";
-import { getAuthNinja } from "../../../lib/auth-ninja";
+import { withAuthGuard } from "@/lib/with-auth-guard";
 
-export async function GET(request: Request) {
-  const auth = await getAuthNinja();
-  return createPasskeyListHandler(auth)(request);
-}
+export const GET = withAuthGuard((request, auth) => createPasskeyListHandler(auth)(request));

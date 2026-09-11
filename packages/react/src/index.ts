@@ -69,3 +69,7 @@ export { use2FA, type TwoFaState } from "./use-2fa.js";
 export { usePasskey, type PasskeyState } from "./use-passkey.js";
 export { useSession, type SessionState } from "./use-session.js";
 export { RequireAuth, type RequireAuthProps } from "./require-auth.js";
+export {
+  readViteAuthClientConfig,
+  type ViteAuthClientConfig,
+} from "./vite-auth-env.js";

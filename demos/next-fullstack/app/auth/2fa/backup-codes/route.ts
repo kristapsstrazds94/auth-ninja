@@ -1,7 +1,6 @@
 import { createTwoFaBackupCodesHandler } from "@auth-ninja/next";
-import { getAuthNinja } from "../../../../lib/auth-ninja";
+import { withAuthGuard } from "@/lib/with-auth-guard";
 
-export async function POST(request: Request) {
-  const auth = await getAuthNinja();
-  return createTwoFaBackupCodesHandler(auth)(request);
-}
+export const POST = withAuthGuard((request, auth) =>
+  createTwoFaBackupCodesHandler(auth)(request),
+);

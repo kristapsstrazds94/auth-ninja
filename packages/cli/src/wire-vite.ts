@@ -14,8 +14,7 @@ export default defineConfig({
 `;
 
 const VITE_CLIENT_SNIPPET = `// Auth-Ninja — wrap your app root (e.g. main.tsx)
-import { AuthProvider } from "@auth-ninja/react";
-import { readViteAuthClientConfig } from "@auth-ninja/react/vite";
+import { AuthProvider, readViteAuthClientConfig } from "@auth-ninja/react";
 
 const authConfig = readViteAuthClientConfig(import.meta.env);
 

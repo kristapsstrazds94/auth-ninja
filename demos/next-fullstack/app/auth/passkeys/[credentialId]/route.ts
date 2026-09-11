@@ -1,11 +1,7 @@
 import { createPasskeyDeleteHandler } from "@auth-ninja/next";
-import { getAuthNinja } from "../../../../lib/auth-ninja";
+import { withAuthGuardDynamic } from "@/lib/with-auth-guard";
 
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ credentialId: string }> },
-) {
-  const auth = await getAuthNinja();
-  const params = await context.params;
-  return createPasskeyDeleteHandler(auth)(request, { params });
-}
+export const DELETE = withAuthGuardDynamic(async (request, auth, { params }) => {
+  const resolved = await params;
+  return createPasskeyDeleteHandler(auth)(request, { params: resolved });
+});

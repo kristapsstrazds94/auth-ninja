@@ -1,4 +1,4 @@
-import { AuthNinjaError } from "@auth-ninja/core";
+import { AuthNinjaError } from "@auth-ninja/core/errors";
 import { parseAuthErrorResponse, type AuthClient } from "./auth-client.js";
 
 export type AuthUser = {

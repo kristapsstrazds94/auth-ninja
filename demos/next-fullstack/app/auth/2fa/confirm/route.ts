@@ -1,7 +1,4 @@
 import { createTwoFaConfirmHandler } from "@auth-ninja/next";
-import { getAuthNinja } from "../../../../lib/auth-ninja";
+import { withAuthGuard } from "@/lib/with-auth-guard";
 
-export async function POST(request: Request) {
-  const auth = await getAuthNinja();
-  return createTwoFaConfirmHandler(auth)(request);
-}
+export const POST = withAuthGuard((request, auth) => createTwoFaConfirmHandler(auth)(request));

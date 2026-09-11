@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { AuthProvider } from "@auth-ninja/react";
-import { readViteAuthClientConfig } from "@auth-ninja/react/vite";
+import { AuthProvider, readViteAuthClientConfig } from "@auth-ninja/react";
 import { App } from "./App";
 import "./index.css";
 

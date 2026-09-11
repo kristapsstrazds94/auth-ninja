@@ -16,6 +16,14 @@ pnpm --filter @auth-ninja/demo-next-fullstack dev
 
 Open [http://localhost:3000](http://localhost:3000). Auth API routes live at `/auth/*` on the same origin — no proxy needed.
 
+Production build (requires `.env.local` + PostgreSQL):
+
+```bash
+pnpm --filter @auth-ninja/demo-next-fullstack build:app
+```
+
+Auth API guards (rate limit, CSRF, IP audit) run in each route handler — not Edge middleware — so native server deps work in Node.js.
+
 ## Pages
 
 | Route | Purpose |
