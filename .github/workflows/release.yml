@@ -13,8 +13,6 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-      # Required for npm OIDC trusted publishing (short-lived identity token).
-      id-token: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -22,17 +20,13 @@ jobs:
 
       - uses: pnpm/action-setup@v4
 
-      # No registry-url — setup-node writes an empty _authToken line that blocks
-      # npm OIDC trusted publishing when NPM_TOKEN is unset.
       - uses: actions/setup-node@v4
         with:
           node-version: 24
           cache: pnpm
-
-      # OIDC trusted publishing requires npm >= 11.5.1. Pin 11.x — npm 12 has
-      # breaking changes around git-checks and publish behaviour.
-      - name: Pin npm for OIDC trusted publishing
-        run: npm install -g --ignore-scripts npm@11
+          registry-url: https://registry.npmjs.org
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -43,17 +37,6 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Verify OIDC environment
-        run: |
-          if [ -z "${ACTIONS_ID_TOKEN_REQUEST_URL:-}" ] || [ -z "${ACTIONS_ID_TOKEN_REQUEST_TOKEN:-}" ]; then
-            echo "::error::OIDC env vars missing — check id-token: write permission"
-            exit 1
-          fi
-          echo "OIDC env vars present"
-          echo "npm: $(npm --version)"
-
-      # Version-only — do NOT publish inside changesets/action. Subprocesses spawned
-      # by the action do not inherit ACTIONS_ID_TOKEN_* (ENEEDAUTH). Publish below.
       - name: Create release PR
         id: changesets
         uses: changesets/action@v1
@@ -64,11 +47,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Verify npm credentials
+        if: steps.changesets.outputs.hasChangesets == 'false'
+        run: |
+          if [ -z "${NODE_AUTH_TOKEN:-}" ]; then
+            echo "::error::Repository secret NPM_TOKEN is not set. See .changeset/README.md (section: NPM token setup)."
+            exit 1
+          fi
+          echo "Logged in as: $(npm whoami)"
+
       - name: Publish to npm
         if: steps.changesets.outputs.hasChangesets == 'false'
         run: node scripts/publish-oidc.mjs
-        env:
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Push git tags
         if: steps.changesets.outputs.hasChangesets == 'false'

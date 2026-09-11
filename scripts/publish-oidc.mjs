@@ -1,28 +1,18 @@
 #!/usr/bin/env node
 /**
- * Publish monorepo packages via npm OIDC trusted publishing.
+ * Publish @auth-ninja/* packages from CI or locally.
  *
- * `pnpm release` → `changeset publish` → `pnpm publish` breaks OIDC because
- * pnpm injects NPM_CONFIG_* env vars that prevent npm 11+ from using
- * ACTIONS_ID_TOKEN_* credentials (ENEEDAUTH in CI).
- *
- * This script resolves workspace:* deps and calls `npm publish` directly so
- * OIDC env vars reach the npm CLI. Use as the changesets/action `publish`
- * command after `pnpm build` has already run in the workflow.
- *
- * @see https://github.com/npm/cli/issues/8976
- * @see https://github.com/changesets/action/issues/542
+ * Skips packages already on npm at the same version (matching this repo).
+ * Requires NODE_AUTH_TOKEN (CI: set via NPM_TOKEN repository secret).
  */
 
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { homedir } from 'node:os';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
-/** Dependency order: publish dependents after their workspace deps exist on npm. */
 const PUBLISH_ORDER = [
   '@auth-ninja/protocol',
   '@auth-ninja/core',
@@ -33,65 +23,25 @@ const PUBLISH_ORDER = [
 
 const OUR_REPO_MARKER = 'kristapsstrazds94/auth-ninja';
 
-/** Remove _authToken lines that block npm OIDC when no real token is configured. */
-function stripDummyNpmrcAuth() {
-  const candidates = [
-    process.env.NPM_CONFIG_USERCONFIG,
-    join(homedir(), '.npmrc'),
-    join(process.cwd(), '.npmrc'),
-  ].filter(Boolean);
-
-  for (const npmrcPath of new Set(candidates)) {
-    if (!existsSync(npmrcPath)) continue;
-    const original = readFileSync(npmrcPath, 'utf8');
-    const stripped = original
-      .split('\n')
-      .filter((line) => !line.includes('_authToken'))
-      .join('\n');
-    if (stripped !== original) {
-      writeFileSync(npmrcPath, stripped);
-      console.log(`Stripped dummy _authToken from ${npmrcPath}`);
-    }
-  }
-}
-
-/** Strip pnpm-injected npm config so OIDC trusted publishing can engage. */
-function envForPublish(base = process.env) {
-  if (base.NPM_TOKEN || base.NODE_AUTH_TOKEN) {
-    return { ...base };
-  }
-
-  const env = { ...base };
-  for (const key of Object.keys(env)) {
-    if (key.toLowerCase().startsWith('npm_config_')) {
-      delete env[key];
-    }
-  }
-  delete env.NODE_AUTH_TOKEN;
-  delete env.NPM_TOKEN;
-  return env;
-}
-
-function assertPublishAuthReady(env) {
-  if (env.NPM_TOKEN || env.NODE_AUTH_TOKEN) {
-    console.log('Using NPM_TOKEN / NODE_AUTH_TOKEN for publish');
+function assertPublishAuthReady() {
+  if (process.env.NODE_AUTH_TOKEN || process.env.NPM_TOKEN) {
+    console.log('npm auth: token present');
     return;
   }
 
-  const hasOidc =
-    Boolean(env.ACTIONS_ID_TOKEN_REQUEST_URL) &&
-    Boolean(env.ACTIONS_ID_TOKEN_REQUEST_TOKEN);
+  console.error(`
+NPM_TOKEN is not configured.
 
-  if (!hasOidc) {
-    console.error(
-      'No NPM_TOKEN and no OIDC env vars — configure npm trusted publishers ' +
-        'on npmjs.com or add an NPM_TOKEN repository secret.',
-    );
-    process.exit(1);
-  }
-
-  console.log('Using npm OIDC trusted publishing');
-  console.log(`npm: ${execFileSync('npm', ['--version'], { encoding: 'utf8' }).trim()}`);
+One-time setup:
+  1. https://www.npmjs.com/settings/kristapsstrazds94/tokens
+     → Generate New Token → Granular Access Token
+     → Permissions: Read and write
+     → Select packages: @auth-ninja/* (all packages in the auth-ninja org)
+  2. https://github.com/kristapsstrazds94/auth-ninja/settings/secrets/actions
+     → New repository secret → Name: NPM_TOKEN → paste the npm_… token
+  3. Re-run the Release workflow
+`);
+  process.exit(1);
 }
 
 function loadPackages() {
@@ -130,12 +80,11 @@ function resolveWorkspaceDeps(manifest, versions) {
   return resolved;
 }
 
-function npmViewExact(name, version, env) {
+function npmViewExact(name, version) {
   try {
     const raw = execFileSync('npm', ['view', `${name}@${version}`, '--json'], {
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'ignore'],
-      env,
     }).trim();
     return JSON.parse(raw);
   } catch {
@@ -152,23 +101,22 @@ function registryRepository(info) {
   return '';
 }
 
-function isOurPackagePublished(name, version, env) {
-  const info = npmViewExact(name, version, env);
+function isOurPackagePublished(name, version) {
+  const info = npmViewExact(name, version);
   if (!info) return false;
 
   const repo = registryRepository(info);
   if (!repo.includes(OUR_REPO_MARKER)) {
     throw new Error(
-      `${name}@${version} exists on npm but belongs to another repository (${repo || 'unknown'}). ` +
-        'Rename the local package or unpublish the conflicting release.',
+      `${name}@${version} exists on npm but belongs to another repository (${repo || 'unknown'}).`,
     );
   }
 
   return true;
 }
 
-function publishPackage({ name, version, dir, manifest }, versions, env) {
-  if (isOurPackagePublished(name, version, env)) {
+function publishPackage({ name, version, dir, manifest }, versions) {
+  if (isOurPackagePublished(name, version)) {
     console.log(`${name}@${version} is already on the registry, skipping`);
     return false;
   }
@@ -184,8 +132,8 @@ function publishPackage({ name, version, dir, manifest }, versions, env) {
   try {
     const result = spawnSync(
       'npm',
-      ['publish', '--access', 'public', '--provenance', '--ignore-scripts'],
-      { cwd: dir, env, stdio: 'inherit' },
+      ['publish', '--access', 'public', '--ignore-scripts'],
+      { cwd: dir, stdio: 'inherit' },
     );
     if (result.status !== 0) {
       process.exit(result.status ?? 1);
@@ -195,20 +143,13 @@ function publishPackage({ name, version, dir, manifest }, versions, env) {
   }
 
   const tag = `${name}@${version}`;
-  const tagResult = spawnSync('git', ['tag', tag], { stdio: 'inherit' });
-  if (tagResult.status !== 0) {
-    console.log(`Note: git tag ${tag} could not be created (already exists?)`);
-  }
-
-  // changesets/action parses this line to push tags and create GitHub releases.
+  spawnSync('git', ['tag', tag], { stdio: 'inherit' });
   console.log(`New tag: ${tag}`);
   return true;
 }
 
 function main() {
-  stripDummyNpmrcAuth();
-  const env = envForPublish();
-  assertPublishAuthReady(env);
+  assertPublishAuthReady();
 
   const packages = loadPackages();
   const versions = new Map([...packages.values()].map((p) => [p.name, p.version]));
@@ -219,7 +160,7 @@ function main() {
     if (!pkg) {
       throw new Error(`Expected publishable package ${name} under packages/`);
     }
-    if (publishPackage(pkg, versions, env)) {
+    if (publishPackage(pkg, versions)) {
       publishedAny = true;
     }
   }

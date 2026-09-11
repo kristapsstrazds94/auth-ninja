@@ -53,8 +53,9 @@ describe("release readiness (task 7.3)", () => {
     expect(existsSync(join(repoRoot, "scripts/publish-oidc.mjs"))).toBe(true);
     const workflow = readFileSync(join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("scripts/publish-oidc.mjs");
-    expect(workflow).toContain("id-token: write");
+    expect(workflow).toContain("NPM_TOKEN");
     expect(workflow).toContain("hasChangesets == 'false'");
+    expect(workflow).toContain("npm whoami");
     expect(workflow).not.toMatch(/changesets\/action@v1[\s\S]*publish:/);
   });
 

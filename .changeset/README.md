@@ -2,66 +2,66 @@
 
 Auth-Ninja uses [Changesets](https://github.com/changesets/changesets) for versioning and changelogs.
 
+## NPM token setup (required for CI — do this once)
+
+CI publishes with an **npm Automation token** stored as a GitHub secret. Without it, the Release workflow fails with `ENEEDAUTH`.
+
+### Step 1 — Create token on npm
+
+1. Open **[npm → Access Tokens](https://www.npmjs.com/settings/kristapsstrazds94/tokens)** (log in as owner of the `@auth-ninja` org).
+2. Click **Generate New Token** → **Granular Access Token**.
+3. Set:
+   - **Token name:** `github-actions-auth-ninja`
+   - **Expiration:** your choice (90 days or no expiration)
+   - **Packages and scopes:** select **Read and write** for all `@auth-ninja/*` packages (or the whole `@auth-ninja` org)
+4. Click **Generate Token** and **copy** the value (starts with `npm_`). You won't see it again.
+
+### Step 2 — Add GitHub secret
+
+1. Open **[GitHub → auth-ninja → Settings → Secrets and variables → Actions](https://github.com/kristapsstrazds94/auth-ninja/settings/secrets/actions)**.
+2. Click **New repository secret**.
+3. **Name:** `NPM_TOKEN`
+4. **Value:** paste the `npm_…` token from step 1.
+5. Click **Add secret**.
+
+### Step 3 — Re-run Release
+
+1. Open **[Actions → Release](https://github.com/kristapsstrazds94/auth-ninja/actions/workflows/release.yml)**.
+2. Click the failed run → **Re-run all jobs**.
+
+The **Verify npm credentials** step should print `Logged in as: your-npm-username`. Publish then skips packages already at the current version or uploads new ones after a version bump.
+
+---
+
 ## Adding a changeset
 
-After making a user-facing change in a publishable package:
+After a user-facing change:
 
 ```bash
 pnpm changeset
 ```
 
-Follow the prompts, commit the generated file under `.changeset/`, and open a PR.
+Commit the file under `.changeset/` and open a PR.
 
 ## Release workflow
 
 1. Merge PRs with changeset files to `main`.
-2. The **Release** GitHub Action opens a "Version packages" PR (or publishes when versions are bumped).
-3. Merge the version PR — CI runs `pnpm build`, then `node scripts/publish-oidc.mjs` (direct `npm publish` for OIDC; see `scripts/publish-oidc.mjs`).
+2. CI opens a **Version packages** PR (or publishes when no pending changesets remain).
+3. Merge the version PR → CI bumps versions and publishes new releases to npm.
 
-Publishable packages (`@auth-ninja/*`, including `@auth-ninja/cli`) share a **fixed** version line — one bump applies to all.
+Publishable packages: `@auth-ninja/protocol`, `@auth-ninja/core`, `@auth-ninja/react`, `@auth-ninja/next`, `@auth-ninja/cli` (CLI command is still `auth-ninja`).
+
+The unscoped name `auth-ninja` on npm belongs to an unrelated project — our CLI is **`@auth-ninja/cli`**.
 
 Demos and `@auth-ninja/contract-tests` are private and never published.
 
-## First-time npm setup
+## Manual first publish (only if a package is missing on npm)
 
-All publishable packages use the **`@auth-ninja` npm organization**. The unscoped name `auth-ninja` is taken on npm by an unrelated package — the CLI publishes as **`@auth-ninja/cli`** (bin command remains `auth-ninja`).
+All five packages are already on npm at **0.1.0**. You only need this when adding a **new** package name:
 
-If CI fails with `E404` / `'@auth-ninja/…' is not in this registry`, complete this once:
+```bash
+pnpm build
+pnpm --filter @auth-ninja/cli publish --access public --no-git-checks
+```
 
-1. **Create the org** — [npm → Add an Organization](https://www.npmjs.com/org/create), name **`auth-ninja`**, choose the free public-packages plan.
-2. **Log in to npm** on the machine that will bootstrap (must be an owner of the `auth-ninja` org):
-
-   ```bash
-   npm login
-   npm whoami   # should print your npm username
-   ```
-
-3. **Bootstrap each scoped package** (trusted publishing can only be attached after the package exists on npm):
-
-   ```bash
-   pnpm build
-   pnpm --filter @auth-ninja/protocol publish --access public --no-git-checks
-   pnpm --filter @auth-ninja/core publish --access public --no-git-checks
-   pnpm --filter @auth-ninja/react publish --access public --no-git-checks
-   pnpm --filter @auth-ninja/next publish --access public --no-git-checks
-   pnpm --filter @auth-ninja/cli publish --access public --no-git-checks
-   ```
-
-   Run from the repo root in dependency order (protocol → core → react → next → cli). If npm returns **403 / Two-factor authentication … is required**, append a current authenticator code:
-
-   ```bash
-   pnpm --filter @auth-ninja/protocol publish --access public --no-git-checks --otp 123456
-   ```
-
-   Generate a fresh `--otp` for each command (codes expire every ~30s). Or create a granular **Automation** token at [npmjs.com/settings/…/tokens](https://www.npmjs.com/settings/kristapsstrazds94/tokens) with **Publish** permission for the `@auth-ninja` scope and set it as the `NPM_TOKEN` repository secret.
-
-4. **Configure trusted publishing** on npm for each package:
-
-   | Field | Value |
-   | --- | --- |
-   | GitHub organization/user | `kristapsstrazds94` |
-   | Repository | `auth-ninja` |
-   | Workflow filename | `release.yml` |
-   | Allowed action | `npm publish` |
-
-5. Re-run the Release workflow (or merge a version PR). CI uses OIDC when `NPM_TOKEN` is unset; alternatively add an org **Automation** token as the `NPM_TOKEN` repository secret.
+Use `--otp 123456` if npm asks for 2FA.
