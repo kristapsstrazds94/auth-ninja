@@ -7,6 +7,7 @@ export {
   loadAuthNinjaConfig,
   type LoadAuthNinjaConfigOptions,
 } from "./env-loader.js";
+export { generateAuthNinjaSecret } from "./secret.js";
 export {
   AUTH_ERROR_CATALOG,
   AUTH_ERROR_CODES,

@@ -2,6 +2,7 @@
 
 import { runDoctorCli, type DoctorOptions } from "./commands/doctor.js";
 import { runInit } from "./commands/init.js";
+import { runKeysGenerate } from "./commands/keys.js";
 import type { AuthStack } from "./detect-stack.js";
 
 const args = process.argv.slice(2);
@@ -13,8 +14,8 @@ auth-ninja — secure authentication toolkit
 Usage:
   auth-ninja init [--stack next|vite|dotnet] [--cwd <path>] [--dry-run]
   auth-ninja doctor [--cwd <path>] [--production] [--strict]
-  auth-ninja demo       Start local demo stack (task 6.1)
-  auth-ninja keys       Generate secrets (task 5.3)
+  auth-ninja demo              Start local demo stack (task 6.1)
+  auth-ninja keys generate     Output a secure AUTH_NINJA_SECRET
 
 Run auth-ninja init in your app root to scaffold .env and wire adapters.
 `.trim();
@@ -85,6 +86,17 @@ async function main(): Promise<void> {
     case "doctor": {
       const exitCode = await runDoctorCli(parseDoctorArgs(args.slice(1)));
       process.exit(exitCode);
+      break;
+    }
+    case "keys": {
+      const subcommand = args[1] ?? "generate";
+      if (subcommand === "generate") {
+        runKeysGenerate();
+        break;
+      }
+      console.error(`Unknown keys subcommand: ${subcommand}\n`);
+      console.log(HELP);
+      process.exit(1);
       break;
     }
     default:

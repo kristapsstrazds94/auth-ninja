@@ -41,4 +41,14 @@ auth-ninja doctor --production --strict
 
 Exit code `0` when all checks pass; `1` when any check fails (`--strict` also fails on warnings).
 
-Other commands (`demo`, `keys`) are implemented in later tasks — see `docs/TASKS.md` phase 5.
+### `auth-ninja keys generate`
+
+Outputs a cryptographically strong `AUTH_NINJA_SECRET` (≥ 32 random characters) validated by `@auth-ninja/core`:
+
+```bash
+auth-ninja keys generate
+```
+
+Copy the line into your `.env` file. Do not commit the generated value.
+
+Other commands (`demo`) are implemented in later tasks — see `docs/TASKS.md` phase 6.
