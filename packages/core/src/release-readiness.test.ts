@@ -44,11 +44,16 @@ describe("release readiness (task 7.3)", () => {
     const root = readJson(join(repoRoot, "package.json"));
     const scripts = root.scripts as Record<string, string>;
     expect(scripts["version-packages"]).toBe("changeset version");
-    expect(scripts.release).toContain("changeset publish");
+    expect(scripts.release).toContain("pnpm build");
+    expect(scripts.release).toContain("scripts/publish-oidc.mjs");
   });
 
-  it("release GitHub workflow exists", () => {
+  it("release GitHub workflow and OIDC publish script exist", () => {
     expect(existsSync(join(repoRoot, ".github/workflows/release.yml"))).toBe(true);
+    expect(existsSync(join(repoRoot, "scripts/publish-oidc.mjs"))).toBe(true);
+    const workflow = readFileSync(join(repoRoot, ".github/workflows/release.yml"), "utf8");
+    expect(workflow).toContain("scripts/publish-oidc.mjs");
+    expect(workflow).toContain("id-token: write");
   });
 
   describe.each(PUBLISHABLE_PACKAGES)("$name", ({ dir, files }) => {
