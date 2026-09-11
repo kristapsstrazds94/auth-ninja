@@ -1,0 +1,13 @@
+rules:
+  - id: weak-password-hash-dotnet
+    message: Use Argon2id for password hashing — never MD5, SHA1, or bare SHA256.
+    severity: ERROR
+    languages: [csharp]
+    paths:
+      include:
+        - "**/PasswordHasher*.cs"
+        - "**/AuthService*.cs"
+    pattern-either:
+      - pattern: MD5.Create()
+      - pattern: SHA1.Create()
+      - pattern: SHA256.HashData($PW)

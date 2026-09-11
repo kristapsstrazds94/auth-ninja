@@ -8,7 +8,9 @@
     "test": "turbo run test",
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
-    "clean": "turbo run clean"
+    "clean": "turbo run clean",
+    "semgrep:scan": "node scripts/semgrep-scan.mjs",
+    "semgrep:test": "node scripts/semgrep-test.mjs"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.10",

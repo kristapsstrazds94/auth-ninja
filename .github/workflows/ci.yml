@@ -30,3 +30,17 @@ jobs:
 
       - name: Test
         run: pnpm test
+
+  semgrep:
+    name: Semgrep auth rules
+    runs-on: ubuntu-latest
+    container:
+      image: semgrep/semgrep
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Scan packages and adapters
+        run: semgrep --config .semgrep/auth-ninja.yml --config .semgrep/auth-ninja-dotnet.yml --error packages adapters
+
+      - name: Verify Semgrep rule tests
+        run: node scripts/semgrep-test.mjs

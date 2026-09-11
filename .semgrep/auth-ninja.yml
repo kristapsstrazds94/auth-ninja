@@ -1,0 +1,109 @@
+rules:
+  - id: session-token-in-web-storage
+    message: >-
+      Do not store session or auth tokens in localStorage/sessionStorage.
+      Use HttpOnly, Secure, SameSite=Strict cookies only.
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      include:
+        - "**/packages/**"
+      exclude:
+        - "**/*.test.*"
+    patterns:
+      - pattern-either:
+          - pattern: localStorage.setItem($KEY, ...)
+          - pattern: sessionStorage.setItem($KEY, ...)
+          - pattern: localStorage.getItem($KEY)
+          - pattern: sessionStorage.getItem($KEY)
+      - metavariable-regex:
+          metavariable: $KEY
+          regex: (?i).*(token|session|auth|jwt|bearer).*
+
+  - id: weak-password-hash-md5-sha1
+    message: Use Argon2id for password hashing — never MD5 or SHA1.
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      include:
+        - "**/packages/**"
+        - "**/adapters/**"
+      exclude:
+        - "**/*.test.*"
+        - "**/totp.ts"
+        - "**/TotpHelper.cs"
+    pattern-either:
+      - pattern: createHash("md5")
+      - pattern: createHash('md5')
+      - pattern: createHash("sha1")
+      - pattern: createHash('sha1')
+
+  - id: weak-password-hash-sha256
+    message: >-
+      Do not hash passwords with unsalted SHA256. Use Argon2id via
+      @auth-ninja/core or PasswordHasher.
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      include:
+        - "**/password*.ts"
+        - "**/backup-codes.ts"
+      exclude:
+        - "**/*.test.*"
+    pattern-either:
+      - pattern: createHash("sha256")
+      - pattern: createHash('sha256')
+
+  - id: auth-secret-logging
+    message: >-
+      Never log passwords, TOTP seeds, session IDs, recovery codes, or
+      AUTH_NINJA_SECRET.
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      exclude:
+        - "**/*.test.*"
+    patterns:
+      - pattern-either:
+          - pattern: console.log($MSG)
+          - pattern: console.debug($MSG)
+          - pattern: console.info($MSG)
+          - pattern: console.warn($MSG)
+      - metavariable-regex:
+          metavariable: $MSG
+          regex: (?i).*(password|totp.?seed|session.?id|recovery.?code|auth_ninja_secret).*
+
+  - id: hardcoded-auth-secret
+    message: >-
+      Do not hardcode AUTH_NINJA_SECRET. Load from environment or use
+      auth-ninja keys generate.
+    severity: ERROR
+    languages: [javascript, typescript]
+    paths:
+      exclude:
+        - "**/*.test.*"
+        - "**/.env.example"
+        - "**/env.example"
+        - "**/cli/src/demo/stacks.ts"
+    pattern-either:
+      - pattern: 'AUTH_NINJA_SECRET = "$SECRET"'
+      - pattern: "AUTH_NINJA_SECRET = '$SECRET'"
+      - pattern: 'AUTH_NINJA_SECRET: "$SECRET"'
+      - pattern: "AUTH_NINJA_SECRET: '$SECRET'"
+
+  - id: styled-ui-in-react-package
+    message: >-
+      packages/react is headless — no UI components. Put styled UI in demos/
+      only.
+    severity: ERROR
+    languages: [typescript]
+    paths:
+      include:
+        - "**/packages/react/src/**"
+      exclude:
+        - "**/*.test.*"
+    pattern-either:
+      - pattern: <input/>
+      - pattern: <button>...</button>
+      - pattern: <form>...</form>
+      - pattern: <label>...</label>
