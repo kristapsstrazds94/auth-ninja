@@ -22,27 +22,35 @@ export function DemoNav() {
 
   return (
     <nav className="demo-nav">
-      <Link href="/" className="demo-nav-brand">
-        {PACKAGE_NAME}
-      </Link>
+      <div className="demo-nav-chrome">
+        <span className="demo-console-chrome-dots" aria-hidden>
+          <span />
+          <span />
+          <span />
+        </span>
 
-      <div className="demo-nav-links">
-        {isAuthenticated ? (
-          <>
-            <NavLink href="/">Dashboard</NavLink>
-            <NavLink href="/2fa">2FA</NavLink>
-            <NavLink href="/passkeys">Passkeys</NavLink>
-            <button type="button" className="btn btn-secondary" onClick={() => void logout()}>
-              Log out
-            </button>
-          </>
-        ) : (
-          <>
-            <NavLink href="/login">Log in</NavLink>
-            <NavLink href="/register">Register</NavLink>
-            <NavLink href="/passkeys">Passkeys</NavLink>
-          </>
-        )}
+        <Link href="/" className="demo-nav-brand">
+          {PACKAGE_NAME}
+        </Link>
+
+        <div className="demo-nav-links">
+          {isAuthenticated ? (
+            <>
+              <NavLink href="/">Dashboard</NavLink>
+              <NavLink href="/2fa">2FA</NavLink>
+              <NavLink href="/passkeys">Passkeys</NavLink>
+              <button type="button" className="btn btn-secondary btn-nav" onClick={() => void logout()}>
+                Log out
+              </button>
+            </>
+          ) : (
+            <>
+              <NavLink href="/login">Log in</NavLink>
+              <NavLink href="/register">Register</NavLink>
+              <NavLink href="/passkeys">Passkeys</NavLink>
+            </>
+          )}
+        </div>
       </div>
     </nav>
   );

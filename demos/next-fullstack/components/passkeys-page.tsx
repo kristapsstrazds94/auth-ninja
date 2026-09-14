@@ -8,6 +8,8 @@ import {
   useAuth,
   usePasskey,
 } from "@auth-ninja/react";
+import { AuthDemoCard } from "@/components/auth-demo-card";
+import { AuthPageShell } from "@/components/auth-page-shell";
 import { Protected } from "@/components/protected";
 import { formatAuthError } from "@/lib/auth-error";
 import {
@@ -55,35 +57,40 @@ function PasskeyLoginPanel() {
   }
 
   return (
-    <div className="auth-layout">
-      <div className="card stack">
-        <header className="page-header">
-          <h1>Passkey login</h1>
-          <p>
-            Sign in with a registered passkey. Email is optional when using discoverable
-            credentials.
+    <AuthPageShell showLogo={false}>
+      <AuthDemoCard
+        title="Passkeys"
+        footer={
+          <p className="muted auth-demo-footer">
+            Prefer password login? <Link href="/login">Log in</Link>
           </p>
-        </header>
-
-        <label>
-          Email (optional)
-          <input
-            type="email"
-            autoComplete="username"
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <button type="button" className="btn btn-block" disabled={busy} onClick={() => void handlePasskeyLogin()}>
-          {busy ? "Waiting for passkey…" : "Sign in with passkey"}
-        </button>
-        <p className="muted">
-          Prefer password login? <Link href="/login">Log in</Link>
-        </p>
-      </div>
-    </div>
+        }
+      >
+        <div className="auth-demo-form stack">
+          <label>
+            Email (optional)
+            <input
+              type="email"
+              autoComplete="username"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          {error ? <p className="error">{error}</p> : null}
+          <div className="btn-group">
+            <button
+              type="button"
+              className="btn btn-block"
+              disabled={busy}
+              onClick={() => void handlePasskeyLogin()}
+            >
+              {busy ? "Waiting for passkey…" : "Sign in with passkey"}
+            </button>
+          </div>
+        </div>
+      </AuthDemoCard>
+    </AuthPageShell>
   );
 }
 

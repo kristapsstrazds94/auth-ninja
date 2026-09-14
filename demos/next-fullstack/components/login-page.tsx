@@ -4,8 +4,8 @@ import { FormEvent, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { isMfaRequiredResponse, useAuth, usePasskey } from "@auth-ninja/react";
+import { AuthDemoCard } from "@/components/auth-demo-card";
 import { AuthPageShell } from "@/components/auth-page-shell";
-import { DemoLogo } from "@/components/demo-logo";
 import { formatAuthError } from "@/lib/auth-error";
 import { performPasskeyAuthentication } from "@/lib/webauthn";
 
@@ -60,12 +60,15 @@ export function LoginPage() {
 
   return (
     <AuthPageShell showLogo={false}>
-      <div className="card stack">
-        <div className="auth-card-logo">
-          <DemoLogo variant="hero" />
-        </div>
-
-        <form onSubmit={(event) => void handleSubmit(event)}>
+      <AuthDemoCard
+        title="Login"
+        footer={
+          <p className="muted auth-demo-footer">
+            No account yet? <Link href="/register">Create one</Link>
+          </p>
+        }
+      >
+        <form className="auth-demo-form" onSubmit={(event) => void handleSubmit(event)}>
           <label>
             Email address
             <input
@@ -104,11 +107,7 @@ export function LoginPage() {
             </button>
           </div>
         </form>
-
-        <p className="muted">
-          No account yet? <Link href="/register">Create one</Link>
-        </p>
-      </div>
+      </AuthDemoCard>
     </AuthPageShell>
   );
 }

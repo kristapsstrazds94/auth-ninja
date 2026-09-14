@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useAuth } from "@auth-ninja/react";
+import { DemoConsoleCard } from "@/components/demo-console-card";
 
 function userInitial(email: string): string {
   return email.charAt(0).toUpperCase();
@@ -12,8 +13,8 @@ export function HomePage() {
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="card stack">
-        <header className="page-header">
+      <DemoConsoleCard>
+        <header className="demo-console-header">
           <h1>Auth-Ninja demo</h1>
           <p>
             A full-stack reference app for testing secure authentication flows. Wire up the
@@ -44,14 +45,14 @@ export function HomePage() {
             </p>
           </div>
         </div>
-      </div>
+      </DemoConsoleCard>
     );
   }
 
   return (
     <div className="stack">
-      <div className="card stack">
-        <header className="page-header">
+      <DemoConsoleCard>
+        <header className="demo-console-header">
           <h1>Signed in</h1>
           <p>Your session is active. Manage security settings from the dashboard below.</p>
         </header>
@@ -65,9 +66,9 @@ export function HomePage() {
             <p className="user-meta">Authenticated via Auth-Ninja session cookie</p>
           </div>
         </div>
-      </div>
+      </DemoConsoleCard>
 
-      <div className="dashboard-grid">
+      <div className="dashboard-grid demo-console-grid">
         <div className="stat-card">
           <div className="stat-card-header">
             <p className="stat-card-title">Two-factor authentication</p>
