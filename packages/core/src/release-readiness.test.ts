@@ -57,7 +57,7 @@ describe("release readiness (task 7.3)", () => {
     expect(workflow).toContain("scripts/create-github-release.mjs");
     expect(workflow).toContain("id-token: write");
     expect(workflow).toContain("hasChangesets == 'false'");
-    expect(workflow).toMatch(/NPM_TOKEN|trusted publishing/);
+    expect(workflow).toMatch(/NPM_TOKEN|trusted publishing \(OIDC\)/);
     expect(workflow).not.toMatch(/changesets\/action@v1[\s\S]*publish:/);
   });
 

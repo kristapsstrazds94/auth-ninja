@@ -25,6 +25,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
+          registry-url: https://registry.npmjs.org
 
       - name: Install
         run: pnpm install --frozen-lockfile
@@ -53,11 +54,12 @@ jobs:
           echo "npm $(npm --version), node $(node --version)"
           if [ -n "${NODE_AUTH_TOKEN:-}" ]; then
             echo "NPM_TOKEN set — logged in as: $(npm whoami)"
+            echo "Dry-run publish for @auth-ninja/protocol..."
+            npm publish --dry-run --access public --ignore-scripts --prefix packages/protocol
           else
-            echo "No NPM_TOKEN — expecting npm trusted publishing (OIDC)"
+            echo "No NPM_TOKEN — publish will use npm trusted publishing (OIDC)"
+            echo "Configure trusted publisher on all @auth-ninja/* packages (workflow: release.yml). See .changeset/README.md"
           fi
-          echo "Dry-run publish for @auth-ninja/protocol..."
-          npm publish --dry-run --access public --ignore-scripts --prefix packages/protocol
 
       - name: Publish to npm
         if: steps.changesets.outputs.hasChangesets == 'false'

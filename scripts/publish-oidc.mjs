@@ -65,6 +65,34 @@ Fix: see .changeset/README.md (NPM token setup or trusted publishing).
 `);
 }
 
+function publishEnv() {
+  const token = npmAuthToken();
+  const env = { ...process.env };
+  if (token) {
+    env.NODE_AUTH_TOKEN = token;
+  } else {
+    delete env.NODE_AUTH_TOKEN;
+    delete env.NPM_TOKEN;
+  }
+  return env;
+}
+
+function printEneedAuthHelp(name) {
+  console.error(`
+Publish failed with npm ENEEDAUTH for ${name}.
+
+CI has no valid npm credentials.
+
+Option A — trusted publishing (recommended):
+  Configure trusted publisher on all five @auth-ninja/* packages:
+    user/org: kristapsstrazds94, repo: auth-ninja, workflow: release.yml
+  See .changeset/README.md
+
+Option B — bypass-2FA token:
+  Set GitHub secret NPM_TOKEN (granular token with bypass 2FA enabled)
+`);
+}
+
 function printOtpHelp(name) {
   console.error(`
 Publish failed with npm EOTP (one-time password required) for ${name}.
@@ -182,10 +210,7 @@ function publishPackage({ name, version, dir, manifest }, versions) {
       {
         cwd: dir,
         encoding: 'utf8',
-        env: {
-          ...process.env,
-          NODE_AUTH_TOKEN: npmAuthToken(),
-        },
+        env: publishEnv(),
       },
     );
     if (result.stdout) process.stdout.write(result.stdout);
@@ -197,6 +222,9 @@ function publishPackage({ name, version, dir, manifest }, versions) {
       }
       if (output.includes('EOTP') || output.includes('one-time password')) {
         printOtpHelp(name);
+      }
+      if (output.includes('ENEEDAUTH') || output.includes('need auth')) {
+        printEneedAuthHelp(name);
       }
       process.exit(result.status ?? 1);
     }
