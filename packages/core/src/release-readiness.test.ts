@@ -21,7 +21,7 @@ const PUBLISHABLE_PACKAGES = [
   { name: "@auth-ninja/cli", dir: "packages/cli", files: ["dist", "README.md"] },
 ] as const;
 
-const RELEASE_VERSION = "0.1.0";
+const RELEASE_VERSION = "1.0.0";
 
 function readJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
@@ -48,11 +48,13 @@ describe("release readiness (task 7.3)", () => {
     expect(scripts.release).toContain("scripts/publish-oidc.mjs");
   });
 
-  it("release GitHub workflow and OIDC publish script exist", () => {
+  it("release GitHub workflow and publish scripts exist", () => {
     expect(existsSync(join(repoRoot, ".github/workflows/release.yml"))).toBe(true);
     expect(existsSync(join(repoRoot, "scripts/publish-oidc.mjs"))).toBe(true);
+    expect(existsSync(join(repoRoot, "scripts/create-github-release.mjs"))).toBe(true);
     const workflow = readFileSync(join(repoRoot, ".github/workflows/release.yml"), "utf8");
     expect(workflow).toContain("scripts/publish-oidc.mjs");
+    expect(workflow).toContain("scripts/create-github-release.mjs");
     expect(workflow).toContain("NPM_TOKEN");
     expect(workflow).toContain("hasChangesets == 'false'");
     expect(workflow).toContain("npm whoami");

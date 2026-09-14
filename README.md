@@ -1,7 +1,5 @@
 <p align="center">
-  <span style="background-color:#ffffff;display:inline-block;padding:16px 24px;border-radius:12px">
-    <img src="assets/logo.png" alt="Auth-Ninja" width="220" />
-  </span>
+  <img src="assets/auth-ninja-white.png" alt="Auth-Ninja" width="220" />
 </p>
 
 <h1 align="center">Auth-Ninja</h1>
@@ -91,7 +89,7 @@ flowchart TB
 | [`@auth-ninja/cli`](packages/cli) | npm | `auth-ninja` scaffolding and deployment checks |
 | [`AuthNinja.AspNetCore`](adapters/dotnet) | NuGet | ASP.NET Core middleware and endpoints |
 
-All npm packages publish at version **0.1.0** and version together via [Changesets](.changeset/README.md).
+All npm packages publish at version **1.0.0** and version together via [Changesets](.changeset/README.md).
 
 ---
 

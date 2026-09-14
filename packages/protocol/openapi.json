@@ -2,7 +2,7 @@
   "openapi": "3.1.0",
   "info": {
     "title": "Auth-Ninja API",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "description": "Shared authentication contract for @auth-ninja/next and AuthNinja.AspNetCore. Sessions use HttpOnly, Secure, SameSite=Strict cookies. State-changing routes require CSRF when enabled."
   },
   "tags": [

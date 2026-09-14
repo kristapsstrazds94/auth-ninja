@@ -1,6 +1,6 @@
 {
   "name": "@auth-ninja/core",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "license": "MIT",
   "description": "Shared auth config, validation, errors, and crypto helpers",
   "type": "module",

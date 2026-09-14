@@ -57,7 +57,7 @@ Demos and `@auth-ninja/contract-tests` are private and never published.
 
 ## Manual first publish (only if a package is missing on npm)
 
-All five packages are already on npm at **0.1.0**. You only need this when adding a **new** package name:
+All five packages publish together at the current monorepo version (see `packages/core/package.json`). You only need manual publish when adding a **new** package name:
 
 ```bash
 pnpm build
