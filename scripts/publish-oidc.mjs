@@ -3,7 +3,12 @@
  * Publish @auth-ninja/* packages from CI or locally.
  *
  * Skips packages already on npm at the same version (matching this repo).
- * Requires NODE_AUTH_TOKEN (CI: set via NPM_TOKEN repository secret).
+ *
+ * CI (GitHub Actions): prefers npm trusted publishing (OIDC). Configure each package
+ * on npmjs.com → Settings → Trusted publishing → workflow `release.yml`.
+ * Optional fallback: NPM_TOKEN secret (must bypass 2FA for publish).
+ *
+ * Local: NODE_AUTH_TOKEN or npm login.
  */
 
 import { readFileSync, readdirSync, existsSync, writeFileSync } from 'node:fs';
@@ -23,25 +28,66 @@ const PUBLISH_ORDER = [
 
 const OUR_REPO_MARKER = 'kristapsstrazds94/auth-ninja';
 
+function npmAuthToken() {
+  return process.env.NODE_AUTH_TOKEN || process.env.NPM_TOKEN || '';
+}
+
+function isCiPublish() {
+  return process.env.GITHUB_ACTIONS === 'true';
+}
+
 function assertPublishAuthReady() {
-  if (process.env.NODE_AUTH_TOKEN || process.env.NPM_TOKEN) {
+  if (npmAuthToken()) {
     console.log('npm auth: token present');
+    return;
+  }
+  if (isCiPublish()) {
+    console.log('npm auth: trusted publishing (OIDC) — no token');
     return;
   }
 
   console.error(`
-NPM_TOKEN is not configured.
+No npm credentials for local publish.
 
-One-time setup:
-  1. https://www.npmjs.com/settings/kristapsstrazds94/tokens
-     → Generate New Token → Granular Access Token
-     → Permissions: Read and write
-     → Select packages: @auth-ninja/* (all packages in the auth-ninja org)
-  2. https://github.com/kristapsstrazds94/auth-ninja/settings/secrets/actions
-     → New repository secret → Name: NPM_TOKEN → paste the npm_… token
-  3. Re-run the Release workflow
+Use npm login, or set NODE_AUTH_TOKEN. For CI, see .changeset/README.md.
 `);
   process.exit(1);
+}
+
+function printPublishPermissionHelp(name) {
+  console.error(`
+Publish failed with npm 404 for ${name}.
+
+npm often returns 404 (not 403) when the token cannot publish to a scoped package.
+"npm whoami" can still succeed with a read-only token.
+
+Fix: see .changeset/README.md (NPM token setup or trusted publishing).
+`);
+}
+
+function printOtpHelp(name) {
+  console.error(`
+Publish failed with npm EOTP (one-time password required) for ${name}.
+
+Your granular token does not bypass 2FA. CI cannot enter an OTP.
+
+Recommended — npm trusted publishing (no token, no OTP):
+  1. On npmjs.com, open each @auth-ninja/* package → Settings → Trusted publishing
+  2. Add GitHub Actions publisher:
+       User/org: kristapsstrazds94
+       Repository: auth-ninja
+       Workflow: release.yml
+       Allowed actions: npm publish
+  3. Repeat for all five packages (protocol, core, react, next, cli)
+  4. Delete the NPM_TOKEN secret (optional) and re-run Release
+
+Quick fix — bypass-2FA token:
+  1. https://www.npmjs.com/settings/kristapsstrazds94/tokens
+  2. Generate New Token → Granular Access Token
+  3. Read and write on @auth-ninja/*
+  4. Enable "Allow this token to bypass two-factor authentication"
+  5. Update GitHub secret NPM_TOKEN and re-run Release
+`);
 }
 
 function loadPackages() {
@@ -133,9 +179,25 @@ function publishPackage({ name, version, dir, manifest }, versions) {
     const result = spawnSync(
       'npm',
       ['publish', '--access', 'public', '--ignore-scripts'],
-      { cwd: dir, stdio: 'inherit' },
+      {
+        cwd: dir,
+        encoding: 'utf8',
+        env: {
+          ...process.env,
+          NODE_AUTH_TOKEN: npmAuthToken(),
+        },
+      },
     );
+    if (result.stdout) process.stdout.write(result.stdout);
+    if (result.stderr) process.stderr.write(result.stderr);
     if (result.status !== 0) {
+      const output = `${result.stdout ?? ''}\n${result.stderr ?? ''}`;
+      if (output.includes('E404') || output.includes('404 Not Found')) {
+        printPublishPermissionHelp(name);
+      }
+      if (output.includes('EOTP') || output.includes('one-time password')) {
+        printOtpHelp(name);
+      }
       process.exit(result.status ?? 1);
     }
   } finally {

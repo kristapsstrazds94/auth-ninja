@@ -2,34 +2,66 @@
 
 Auth-Ninja uses [Changesets](https://github.com/changesets/changesets) for versioning and changelogs.
 
-## NPM token setup (required for CI — do this once)
+## npm publish auth (required for CI — pick one)
 
-CI publishes with an **npm Automation token** stored as a GitHub secret. Without it, the Release workflow fails with `ENEEDAUTH`.
+CI publishes via [`.github/workflows/release.yml`](../.github/workflows/release.yml). Choose **trusted publishing** (recommended) or a **bypass-2FA token**.
 
-### Step 1 — Create token on npm
+### Option A — Trusted publishing / OIDC (recommended)
 
-1. Open **[npm → Access Tokens](https://www.npmjs.com/settings/kristapsstrazds94/tokens)** (log in as owner of the `@auth-ninja` org).
-2. Click **Generate New Token** → **Granular Access Token**.
+No long-lived publish token. npm CLI 11.5.1+ exchanges a short-lived GitHub OIDC token during the workflow.
+
+**One-time setup on npmjs.com** — repeat for **each** publishable package:
+
+| Package | npm settings |
+| --- | --- |
+| `@auth-ninja/protocol` | [Package → Settings → Trusted publishing](https://www.npmjs.com/package/@auth-ninja/protocol?activeTab=settings) |
+| `@auth-ninja/core` | [Package → Settings → Trusted publishing](https://www.npmjs.com/package/@auth-ninja/core?activeTab=settings) |
+| `@auth-ninja/react` | [Package → Settings → Trusted publishing](https://www.npmjs.com/package/@auth-ninja/react?activeTab=settings) |
+| `@auth-ninja/next` | [Package → Settings → Trusted publishing](https://www.npmjs.com/package/@auth-ninja/next?activeTab=settings) |
+| `@auth-ninja/cli` | [Package → Settings → Trusted publishing](https://www.npmjs.com/package/@auth-ninja/cli?activeTab=settings) |
+
+For each package, click **Add trusted publisher** → **GitHub Actions** and set:
+
+- **Organization or user:** `kristapsstrazds94`
+- **Repository:** `auth-ninja`
+- **Workflow filename:** `release.yml` (filename only, not the path)
+- **Allowed actions:** `npm publish`
+
+The workflow already sets `id-token: write`. After all five publishers are configured, re-run **Release**. You can delete the `NPM_TOKEN` secret once OIDC publish succeeds.
+
+Docs: [npm trusted publishing](https://docs.npmjs.com/trusted-publishers/)
+
+### Option B — Granular token with bypass 2FA (legacy)
+
+Use only if you cannot set up trusted publishing yet.
+
+1. Open **[npm → Access Tokens](https://www.npmjs.com/settings/kristapsstrazds94/tokens)**.
+2. **Generate New Token** → **Granular Access Token**.
 3. Set:
-   - **Token name:** `github-actions-auth-ninja`
-   - **Expiration:** your choice (90 days or no expiration)
-   - **Packages and scopes:** select **Read and write** for all `@auth-ninja/*` packages (or the whole `@auth-ninja` org)
-4. Click **Generate Token** and **copy** the value (starts with `npm_`). You won't see it again.
+   - **Permissions:** Read and write
+   - **Packages:** all `@auth-ninja/*` packages
+   - **Bypass 2FA:** enable **“Allow this token to bypass two-factor authentication”** (required — CI cannot enter an OTP)
+4. Add GitHub secret **`NPM_TOKEN`** at [repo Actions secrets](https://github.com/kristapsstrazds94/auth-ninja/settings/secrets/actions).
+5. Re-run **Release**.
 
-### Step 2 — Add GitHub secret
+> npm is deprecating bypass-2FA tokens for direct publish (~2027). Plan to migrate to Option A.
 
-1. Open **[GitHub → auth-ninja → Settings → Secrets and variables → Actions](https://github.com/kristapsstrazds94/auth-ninja/settings/secrets/actions)**.
-2. Click **New repository secret**.
-3. **Name:** `NPM_TOKEN`
-4. **Value:** paste the `npm_…` token from step 1.
-5. Click **Add secret**.
-
-### Step 3 — Re-run Release
+### Verify and re-run
 
 1. Open **[Actions → Release](https://github.com/kristapsstrazds94/auth-ninja/actions/workflows/release.yml)**.
-2. Click the failed run → **Re-run all jobs**.
+2. Re-run the failed job.
 
-The **Verify npm credentials** step should print `Logged in as: your-npm-username`. Publish then skips packages already at the current version or uploads new ones after a version bump.
+**Verify npm publish auth** should pass a dry-run for `@auth-ninja/protocol`. Publish then uploads new versions or skips packages already at the current version.
+
+### Troubleshooting
+
+| Error | Cause | Fix |
+| --- | --- | --- |
+| `EOTP` / one-time password | Token does not bypass 2FA | Option A (OIDC) or Option B with bypass 2FA enabled |
+| `E404` / Not Found on publish | Token lacks write access to `@auth-ninja/*` | Regenerate token with read **and write** on all packages |
+| `ENEEDAUTH` with no token | Trusted publisher not configured | Add trusted publisher on all five packages (exact workflow name `release.yml`) |
+
+`npm whoami` can succeed while publish fails — the token may be read-only or blocked by 2FA.
 
 ---
 
