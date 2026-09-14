@@ -79,16 +79,19 @@ public sealed class PasskeyEndpointTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task LoginBegin_WithUnknownEmail_Returns400()
+    public async Task LoginBegin_WithUnknownEmail_ReturnsDiscoverableOptions()
     {
         using var host = await CreateHostAsync();
         var client = host.GetTestClient();
 
-        var response = await PostJsonWithCsrfAsync(
+        var unknown = await PostJsonWithCsrfAsync(
             client,
             "/auth/passkeys/login/begin",
             new { email = "missing@test.local" });
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var discoverable = await PostJsonWithCsrfAsync(client, "/auth/passkeys/login/begin", new { });
+
+        Assert.Equal(HttpStatusCode.OK, unknown.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, discoverable.StatusCode);
     }
 
     [Fact]

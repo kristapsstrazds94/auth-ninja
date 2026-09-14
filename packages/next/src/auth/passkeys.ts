@@ -195,7 +195,7 @@ export async function passkeyRegisterBegin(
     },
   });
 
-  ctx.webAuthnChallenges.set(
+  await ctx.webAuthnChallenges.set(
     options.challenge,
     { kind: "register", userId: user.id },
     WEBAUTHN_CHALLENGE_TTL_MS,
@@ -225,7 +225,11 @@ export async function passkeyRegisterFinish(
     return validationFailure();
   }
 
-  const storedChallenge = ctx.webAuthnChallenges.consume(expectedChallenge, "register", now);
+  const storedChallenge = await ctx.webAuthnChallenges.consume(
+    expectedChallenge,
+    "register",
+    now,
+  );
 
   if (!storedChallenge || storedChallenge.userId !== user.id) {
     return validationFailure();
@@ -296,27 +300,13 @@ export async function passkeyLoginBegin(
       .where(eq(users.emailNormalized, emailNormalized))
       .limit(1);
 
-    if (!user) {
-      return {
-        status: 400,
-        body: {
-          code: "VALIDATION_ERROR",
-          message: createAuthError("VALIDATION_ERROR").message,
-        },
-      };
-    }
-
-    userId = user.id;
-    allowCredentials = await loadUserPasskeyDescriptors(ctx, user.id);
-
-    if (allowCredentials.length === 0) {
-      return {
-        status: 400,
-        body: {
-          code: "VALIDATION_ERROR",
-          message: createAuthError("VALIDATION_ERROR").message,
-        },
-      };
+    if (user) {
+      userId = user.id;
+      allowCredentials = await loadUserPasskeyDescriptors(ctx, user.id);
+      if (allowCredentials.length === 0) {
+        allowCredentials = undefined;
+        userId = undefined;
+      }
     }
   }
 
@@ -328,7 +318,7 @@ export async function passkeyLoginBegin(
     userVerification: "preferred",
   });
 
-  ctx.webAuthnChallenges.set(
+  await ctx.webAuthnChallenges.set(
     options.challenge,
     { kind: "login", userId },
     WEBAUTHN_CHALLENGE_TTL_MS,
@@ -362,7 +352,11 @@ export async function passkeyLoginFinish(
     return invalidCredentials();
   }
 
-  const storedChallenge = ctx.webAuthnChallenges.consume(expectedChallenge, "login", now);
+  const storedChallenge = await ctx.webAuthnChallenges.consume(
+    expectedChallenge,
+    "login",
+    now,
+  );
 
   if (!storedChallenge) {
     return invalidCredentials();

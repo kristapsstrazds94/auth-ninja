@@ -84,6 +84,12 @@ if (isWeakSecret(secret)) {
 }
 
 process.env.AUTH_NINJA_DATABASE_URL = await ensureDatabaseUrl();
+process.env.E2E_PORT ??= "3001";
+// Runner owns the test server URL so a local dev server on 3000 does not collide.
+process.env.E2E_BASE_URL = `http://localhost:${process.env.E2E_PORT}`;
+process.env.AUTH_NINJA_LOCKOUT_MAX_ATTEMPTS ??= "3";
+process.env.AUTH_NINJA_LOCKOUT_WINDOW_MINUTES ??= "15";
+process.env.AUTH_NINJA_LOCKOUT_DURATION_MINUTES ??= "30";
 
 if (!(await canConnect(process.env.AUTH_NINJA_DATABASE_URL))) {
   console.error("PostgreSQL is still unreachable after setup.");

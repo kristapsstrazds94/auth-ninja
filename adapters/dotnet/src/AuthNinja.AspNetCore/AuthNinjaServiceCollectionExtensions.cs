@@ -59,6 +59,7 @@ public static class AuthNinjaServiceCollectionExtensions
         services.AddScoped<SessionService>();
         services.AddScoped<AuditService>();
         services.AddScoped<AuthService>();
+        services.AddScoped<PasswordResetService>();
         services.AddScoped<TwoFaService>();
         services.AddScoped<PasskeyService>();
         services.AddSingleton<InMemoryWebAuthnChallengeStore>();

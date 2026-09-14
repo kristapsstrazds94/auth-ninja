@@ -12,6 +12,12 @@ export function createAuthNinjaConfig(options: AuthNinjaNextOptions): AuthNinjaN
 
 export { createAuthNinjaContext, type AuthNinjaContext } from "./context.js";
 export { createRegisterHandler, type RegisterRouteHandler } from "./routes/register.js";
+export {
+  createPasswordResetConfirmHandler,
+  createPasswordResetRequestHandler,
+  type PasswordResetConfirmHandler,
+  type PasswordResetRequestHandler,
+} from "./routes/password-reset.js";
 export { createLoginHandler, type LoginRouteHandler } from "./routes/login.js";
 export { createSessionHandler, type SessionRouteHandler } from "./routes/session.js";
 export { createLogoutHandler, type LogoutRouteHandler } from "./routes/logout.js";
@@ -48,7 +54,11 @@ export {
   CSRF_TOKEN_TTL_MS,
 } from "./middleware/constants.js";
 export { generateCsrfToken, verifyCsrfToken } from "./middleware/csrf.js";
-export { InMemoryRateLimiter, type RateLimitResult } from "./middleware/rate-limit.js";
+export {
+  InMemoryRateLimiter,
+  type RateLimitResult,
+  type RateLimiter,
+} from "./middleware/rate-limit.js";
 export { isAuthApiPath, requiresCsrfProtection } from "./middleware/paths.js";
 export {
   guardAuthApiRequest,
@@ -67,6 +77,12 @@ export {
   type AuthMiddlewareOptions,
 } from "./middleware/next.js";
 export { registerUser, type RegisterResult } from "./auth/register.js";
+export {
+  confirmPasswordReset,
+  requestPasswordReset,
+  type PasswordResetConfirmResult,
+  type PasswordResetRequestResult,
+} from "./auth/password-reset.js";
 export { loginUser, type LoginResult } from "./auth/login.js";
 export { getSessionUser, type GetSessionSuccess } from "./auth/get-session.js";
 export { logoutUser, type LogoutSuccess } from "./auth/logout.js";
@@ -116,6 +132,7 @@ export {
 export { generateSessionToken, hashSessionToken } from "./session/token.js";
 export {
   createSession,
+  invalidateAllUserSessions,
   invalidateSessionByToken,
   resolveSessionByToken,
   rotateSession,
@@ -123,6 +140,13 @@ export {
   type CreatedSession,
   type ResolvedSession,
 } from "./session/service.js";
+export {
+  createRedisAuthStores,
+  RedisLockoutStore,
+  RedisRateLimiter,
+  RedisWebAuthnChallengeStore,
+  type RedisAuthStores,
+} from "./redis/stores.js";
 
 export {
   closeAuthDb,
@@ -136,6 +160,8 @@ export {
   credentialTypeEnum,
   credentials,
   credentialsRelations,
+  passwordResetTokens,
+  passwordResetTokensRelations,
   sessions,
   sessionsRelations,
   users,

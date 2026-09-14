@@ -12,6 +12,10 @@ import {
 import { createCsrfHandler } from "../routes/csrf.js";
 import { createLoginHandler } from "../routes/login.js";
 import { createLogoutHandler } from "../routes/logout.js";
+import {
+  createPasswordResetConfirmHandler,
+  createPasswordResetRequestHandler,
+} from "../routes/password-reset.js";
 import { createRegisterHandler } from "../routes/register.js";
 import { createSessionHandler } from "../routes/session.js";
 import {
@@ -43,6 +47,8 @@ export function createAuthApiRouter(
 
   const routes: Record<string, (request: Request) => Promise<Response> | Response> = {
     "POST /auth/register": createRegisterHandler(ctx),
+    "POST /auth/password-reset/request": createPasswordResetRequestHandler(ctx),
+    "POST /auth/password-reset/confirm": createPasswordResetConfirmHandler(ctx),
     "POST /auth/login": createLoginHandler(ctx),
     "POST /auth/logout": createLogoutHandler(ctx),
     "GET /auth/session": createSessionHandler(ctx),

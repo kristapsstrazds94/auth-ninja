@@ -45,6 +45,7 @@ const testConfig: AuthNinjaConfig = {
   ipAuditEnabled: true,
   csrfEnabled: false,
   apiRateLimitPerMinute: 100,
+  passwordMinScore: 2,
 };
 
 async function createTestContext() {

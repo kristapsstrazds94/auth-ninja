@@ -183,3 +183,24 @@ public sealed class PasskeyListResponse
     [JsonPropertyName("passkeys")]
     public required PasskeySummary[] Passkeys { get; init; }
 }
+
+public sealed class PasswordResetRequest
+{
+    [JsonPropertyName("email")]
+    public string? Email { get; init; }
+}
+
+public sealed class PasswordResetConfirmRequest
+{
+    [JsonPropertyName("token")]
+    public string? Token { get; init; }
+
+    [JsonPropertyName("password")]
+    public string? Password { get; init; }
+}
+
+public sealed class GenericMessageResponse
+{
+    [JsonPropertyName("message")]
+    public required string Message { get; init; }
+}

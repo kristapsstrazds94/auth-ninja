@@ -53,6 +53,7 @@ const testConfig: AuthNinjaConfig = {
   ipAuditEnabled: true,
   csrfEnabled: false,
   apiRateLimitPerMinute: 100,
+  passwordMinScore: 2,
 };
 
 async function createTestContext() {
@@ -98,7 +99,7 @@ describe("enrollTwoFa", () => {
     expect(result.body.otpauthUrl).toContain("otpauth://totp/");
 
     const [stored] = await db.select().from(users);
-    expect(stored?.totpSecret).toBe(result.body.secret);
+    expect(stored?.totpSecret?.startsWith("v1:")).toBe(true);
     expect(stored?.mfaEnabled).toBe(false);
   });
 

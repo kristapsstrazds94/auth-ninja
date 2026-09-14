@@ -114,4 +114,11 @@ internal sealed class SessionService(AuthNinjaDbContext db, IOptions<AuthNinjaOp
         await InvalidateAsync(existingToken, cancellationToken);
         return await CreateAsync(userId, ipAddress, userAgent, now, cancellationToken);
     }
+
+    public async Task InvalidateAllForUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await db.Sessions
+            .Where(s => s.UserId == userId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
 }

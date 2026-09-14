@@ -14,12 +14,12 @@ export type WebAuthnChallengeStore = {
     record: Omit<WebAuthnChallengeRecord, "expiresAt">,
     ttlMs: number,
     now?: Date,
-  ): void;
+  ): void | Promise<void>;
   consume(
     challenge: string,
     kind: WebAuthnChallengeKind,
     now?: Date,
-  ): WebAuthnChallengeRecord | undefined;
+  ): WebAuthnChallengeRecord | undefined | Promise<WebAuthnChallengeRecord | undefined>;
 };
 
 type StoredChallenge = WebAuthnChallengeRecord;

@@ -2,7 +2,7 @@ import {
   createAuthError,
   createLockoutAuditEvent,
   createLoginAuditEvent,
-  verifyPassword,
+  verifyPasswordWithTimingProtection,
 } from "@auth-ninja/core";
 import { eq } from "drizzle-orm";
 import { persistAuditEvent } from "../audit/persist.js";
@@ -75,10 +75,12 @@ export async function loginUser(
     .where(eq(users.emailNormalized, emailNormalized))
     .limit(1);
 
-  const passwordValid =
-    user !== undefined && (await verifyPassword(input.password, user.passwordHash));
+  const passwordValid = await verifyPasswordWithTimingProtection(
+    input.password,
+    user?.passwordHash,
+  );
 
-  if (!passwordValid) {
+  if (!passwordValid || user === undefined) {
     const failure = await ctx.lockout.recordFailure(key, now);
 
     const audit = createLoginAuditEvent({

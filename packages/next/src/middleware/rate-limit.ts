@@ -4,13 +4,22 @@ export type RateLimitResult = {
   retryAfterSeconds?: number;
 };
 
+export type RateLimiter = {
+  check(
+    key: string,
+    limit: number,
+    windowMs: number,
+    nowMs?: number,
+  ): RateLimitResult | Promise<RateLimitResult>;
+};
+
 type Bucket = {
   count: number;
   windowStartMs: number;
 };
 
 /** In-memory fixed-window rate limiter keyed by client identifier (typically IP). */
-export class InMemoryRateLimiter {
+export class InMemoryRateLimiter implements RateLimiter {
   private readonly buckets = new Map<string, Bucket>();
 
   check(key: string, limit: number, windowMs: number, nowMs = Date.now()): RateLimitResult {

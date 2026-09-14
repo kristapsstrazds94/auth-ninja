@@ -20,6 +20,8 @@ export const authNinjaConfigSchema = z.object({
   csrfEnabled: z.boolean().default(true),
   apiRateLimitPerMinute: z.number().int().positive().default(100),
   redisUrl: z.string().url().optional(),
+  /** Minimum zxcvbn score (0–4) for register and password reset. Default 2. */
+  passwordMinScore: z.number().int().min(0).max(4).default(2),
 });
 
 export type AuthNinjaConfig = z.infer<typeof authNinjaConfigSchema>;

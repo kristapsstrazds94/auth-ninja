@@ -40,4 +40,7 @@ public sealed class AuthNinjaOptions
     public int ApiRateLimitPerMinute { get; set; } = 100;
 
     public string? RedisUrl { get; set; }
+
+    /// <summary>Minimum password strength score (0–4). Default 2.</summary>
+    public int PasswordMinScore { get; set; } = 2;
 }

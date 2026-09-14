@@ -10,12 +10,14 @@ import {
   type WebAuthnChallengeStore,
 } from "./auth/webauthn-challenge-store.js";
 import type { AuthDb } from "./db/client.js";
+import type { RateLimiter } from "./middleware/rate-limit.js";
 
 export type AuthNinjaContext = {
   config: AuthNinjaConfig;
   db: AuthDb;
   lockout: LockoutEngine;
   webAuthnChallenges: WebAuthnChallengeStore;
+  rateLimiter?: RateLimiter;
 };
 
 export type CreateAuthNinjaContextOptions = {
@@ -23,6 +25,7 @@ export type CreateAuthNinjaContextOptions = {
   db: AuthDb;
   lockoutStore?: LockoutStore;
   webAuthnChallengeStore?: WebAuthnChallengeStore;
+  rateLimiter?: RateLimiter;
 };
 
 /** Wire config, database, and lockout engine for route handlers. */
@@ -40,5 +43,6 @@ export function createAuthNinjaContext(
     lockout,
     webAuthnChallenges:
       options.webAuthnChallengeStore ?? new InMemoryWebAuthnChallengeStore(),
+    ...(options.rateLimiter !== undefined ? { rateLimiter: options.rateLimiter } : {}),
   };
 }

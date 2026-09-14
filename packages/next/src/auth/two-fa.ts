@@ -23,6 +23,7 @@ import type {
 } from "./validation.js";
 import type { CreatedSession } from "../session/service.js";
 import { resolveSessionByToken, rotateSession } from "../session/service.js";
+import { decryptTotpSecret, encryptTotpSecret } from "./totp-secret.js";
 
 export type EnrollTwoFaSuccess = {
   status: 200;
@@ -179,7 +180,7 @@ export async function enrollTwoFa(
 
   await ctx.db
     .update(users)
-    .set({ totpSecret: secret, updatedAt: now })
+    .set({ totpSecret: encryptTotpSecret(secret, ctx.config.secret), updatedAt: now })
     .where(eq(users.id, user.id));
 
   return {
@@ -197,7 +198,9 @@ export async function confirmTwoFa(
 ): Promise<ConfirmTwoFaResult> {
   const { user } = await resolveSessionByToken(ctx.db, ctx.config, sessionToken, now);
 
-  if (user.mfaEnabled || !user.totpSecret) {
+  const totpSecret = decryptTotpSecret(user.totpSecret, ctx.config.secret);
+
+  if (user.mfaEnabled || !totpSecret) {
     return {
       status: 400,
       body: {
@@ -207,7 +210,7 @@ export async function confirmTwoFa(
     };
   }
 
-  if (!verifyTotpCode({ secret: user.totpSecret, code: input.code })) {
+  if (!verifyTotpCode({ secret: totpSecret, code: input.code })) {
     return {
       status: 400,
       body: {
@@ -260,7 +263,9 @@ export async function verifyTwoFaLogin(
 
   const [user] = await ctx.db.select().from(users).where(eq(users.id, userId)).limit(1);
 
-  if (!user?.mfaEnabled || !user.totpSecret) {
+  const totpSecret = decryptTotpSecret(user?.totpSecret, ctx.config.secret);
+
+  if (!user?.mfaEnabled || !totpSecret) {
     return {
       status: 401,
       body: {
@@ -284,7 +289,7 @@ export async function verifyTwoFaLogin(
     };
   }
 
-  const codeValid = verifyTotpCode({ secret: user.totpSecret, code: input.code });
+  const codeValid = verifyTotpCode({ secret: totpSecret, code: input.code });
 
   if (!codeValid) {
     const failure = await ctx.lockout.recordFailure(key, now);
@@ -408,8 +413,10 @@ export async function disableTwoFa(
 
   let secondFactorValid = false;
 
-  if (input.code && user.totpSecret) {
-    secondFactorValid = verifyTotpCode({ secret: user.totpSecret, code: input.code });
+  const totpSecret = decryptTotpSecret(user.totpSecret, ctx.config.secret);
+
+  if (input.code && totpSecret) {
+    secondFactorValid = verifyTotpCode({ secret: totpSecret, code: input.code });
   } else if (input.backupCode) {
     secondFactorValid = await verifyAndConsumeBackupCode(ctx, user.id, input.backupCode, now);
   }

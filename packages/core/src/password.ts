@@ -41,3 +41,26 @@ export async function verifyPassword(
     return false;
   }
 }
+
+/** Precomputed Argon2id hash used to normalize login timing when the account is unknown. */
+let dummyPasswordHashPromise: Promise<string> | undefined;
+
+async function getDummyPasswordHash(): Promise<string> {
+  if (!dummyPasswordHashPromise) {
+    dummyPasswordHashPromise = hashPassword("__auth_ninja_timing_dummy__");
+  }
+  return dummyPasswordHashPromise;
+}
+
+/**
+ * Verify password against a stored hash, or against a dummy hash when none is provided.
+ * Always runs Argon2id to reduce user-enumeration via response timing.
+ */
+export async function verifyPasswordWithTimingProtection(
+  password: string,
+  passwordHash: string | null | undefined,
+): Promise<boolean> {
+  const hashToVerify = passwordHash ?? (await getDummyPasswordHash());
+  const matches = await verifyPassword(password, hashToVerify);
+  return passwordHash !== null && passwordHash !== undefined && matches;
+}

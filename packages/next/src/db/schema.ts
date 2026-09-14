@@ -45,6 +45,27 @@ export const users = pgTable(
   ],
 );
 
+export const passwordResetTokens = pgTable(
+  "password_reset_tokens",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** SHA-256 of the one-time reset token — never store the raw token. */
+    tokenHash: text("token_hash").notNull(),
+    expiresAt: timestamp("expires_at", { withTimezone: true, mode: "date" }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "date" })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("password_reset_tokens_token_hash_uidx").on(table.tokenHash),
+    index("password_reset_tokens_user_id_idx").on(table.userId),
+    index("password_reset_tokens_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
 export const sessions = pgTable(
   "sessions",
   {
@@ -135,6 +156,14 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   credentials: many(credentials),
   auditEvents: many(auditEvents),
+  passwordResetTokens: many(passwordResetTokens),
+}));
+
+export const passwordResetTokensRelations = relations(passwordResetTokens, ({ one }) => ({
+  user: one(users, {
+    fields: [passwordResetTokens.userId],
+    references: [users.id],
+  }),
 }));
 
 export const sessionsRelations = relations(sessions, ({ one }) => ({
@@ -160,6 +189,7 @@ export const auditEventsRelations = relations(auditEvents, ({ one }) => ({
 
 export const authNinjaSchema = {
   users,
+  passwordResetTokens,
   sessions,
   credentials,
   auditEvents,

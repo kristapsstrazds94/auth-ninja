@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
-    "dev": "next dev --port 3000",
+    "dev": "next dev",
     "build": "tsc --noEmit",
     "build:app": "next build",
     "start": "next start",

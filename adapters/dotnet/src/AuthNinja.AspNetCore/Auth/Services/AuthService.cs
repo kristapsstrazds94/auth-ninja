@@ -37,7 +37,7 @@ internal sealed class AuthService
         DateTimeOffset now,
         CancellationToken cancellationToken = default)
     {
-        ValidateRegisterRequest(request);
+        ValidateRegisterRequest(request, _options.PasswordMinScore);
 
         var emailNormalized = EmailNormalizer.Normalize(request.Email!);
         var passwordHash = PasswordHasher.HashPassword(request.Password!);
@@ -106,8 +106,9 @@ internal sealed class AuthService
         var user = await _db.Users
             .FirstOrDefaultAsync(u => u.EmailNormalized == emailNormalized, cancellationToken);
 
-        var passwordValid = user is not null &&
-                            PasswordHasher.VerifyPassword(request.Password!, user.PasswordHash);
+        var passwordValid = PasswordHasher.VerifyPasswordWithTimingProtection(
+            request.Password!,
+            user?.PasswordHash);
 
         if (!passwordValid)
         {
@@ -197,13 +198,14 @@ internal sealed class AuthService
             },
         };
 
-    private static void ValidateRegisterRequest(RegisterRequest request)
+    private static void ValidateRegisterRequest(RegisterRequest request, int passwordMinScore)
     {
         if (string.IsNullOrWhiteSpace(request.Email) ||
             !IsValidEmail(request.Email) ||
             string.IsNullOrEmpty(request.Password) ||
             request.Password.Length < 8 ||
-            request.Password.Length > 128)
+            request.Password.Length > 128 ||
+            !PasswordStrengthHelper.IsStrongEnough(request.Password, passwordMinScore))
         {
             throw AuthErrors.Create(AuthErrorCode.ValidationError);
         }

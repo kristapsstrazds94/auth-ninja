@@ -68,6 +68,7 @@ const testConfig: AuthNinjaConfig = {
   ipAuditEnabled: true,
   csrfEnabled: false,
   apiRateLimitPerMinute: 100,
+  passwordMinScore: 2,
 };
 
 function buildClientDataJSON(challenge: string, type: "create" | "get"): string {
@@ -271,14 +272,17 @@ describe("passkeyLoginBegin", () => {
     expect(Array.isArray(result.body.options.allowCredentials)).toBe(true);
   });
 
-  it("returns generic validation error for unknown email", async () => {
+  it("returns discoverable options for unknown email to prevent enumeration", async () => {
     const { ctx } = await createTestContext();
 
-    const result = await passkeyLoginBegin(ctx, { email: "missing@test.local" });
+    const unknown = await passkeyLoginBegin(ctx, { email: "missing@test.local" });
+    const discoverable = await passkeyLoginBegin(ctx);
 
-    expect(result.status).toBe(400);
-    if (result.status === 400) {
-      expect(result.body.message).toBe(AUTH_ERROR_MESSAGES.VALIDATION_ERROR);
+    expect(unknown.status).toBe(200);
+    expect(discoverable.status).toBe(200);
+    if (unknown.status === 200 && discoverable.status === 200) {
+      expect(unknown.body.options.allowCredentials).toBeUndefined();
+      expect(discoverable.body.options.allowCredentials).toBeUndefined();
     }
   });
 });

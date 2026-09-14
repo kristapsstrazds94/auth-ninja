@@ -14,6 +14,8 @@ export {
   credentialTypeEnum,
   credentials,
   credentialsRelations,
+  passwordResetTokens,
+  passwordResetTokensRelations,
   sessions,
   sessionsRelations,
   users,

@@ -183,17 +183,15 @@ internal sealed class PasskeyService
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.EmailNormalized == emailNormalized, cancellationToken);
 
-            if (user is null)
+            if (user is not null)
             {
-                throw AuthErrors.Create(AuthErrorCode.ValidationError);
-            }
-
-            userId = user.Id;
-            allowCredentials = await LoadDescriptorsAsync(user.Id, cancellationToken);
-
-            if (allowCredentials.Count == 0)
-            {
-                throw AuthErrors.Create(AuthErrorCode.ValidationError);
+                userId = user.Id;
+                allowCredentials = await LoadDescriptorsAsync(user.Id, cancellationToken);
+                if (allowCredentials.Count == 0)
+                {
+                    allowCredentials = null;
+                    userId = null;
+                }
             }
         }
 

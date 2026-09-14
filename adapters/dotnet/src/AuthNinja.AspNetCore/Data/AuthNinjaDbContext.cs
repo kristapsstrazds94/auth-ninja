@@ -25,11 +25,14 @@ public sealed class AuthNinjaDbContext : DbContext
 
     public DbSet<AuditEvent> AuditEvents => Set<AuditEvent>();
 
+    public DbSet<PasswordResetToken> PasswordResetTokens => Set<PasswordResetToken>();
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         ArgumentNullException.ThrowIfNull(modelBuilder);
 
         ConfigureUsers(modelBuilder.Entity<User>());
+        ConfigurePasswordResetTokens(modelBuilder.Entity<PasswordResetToken>());
         ConfigureSessions(modelBuilder.Entity<Session>());
         ConfigureCredentials(modelBuilder.Entity<Credential>());
         ConfigureAuditEvents(modelBuilder.Entity<AuditEvent>());
@@ -65,6 +68,35 @@ public sealed class AuthNinjaDbContext : DbContext
             .IsUnique()
             .HasDatabaseName("users_email_normalized_uidx");
         entity.HasIndex(e => e.Email).HasDatabaseName("users_email_idx");
+    }
+
+    private static void ConfigurePasswordResetTokens(EntityTypeBuilder<PasswordResetToken> entity)
+    {
+        entity.ToTable("password_reset_tokens");
+
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Id)
+            .HasColumnName("id")
+            .HasDefaultValueSql("gen_random_uuid()");
+
+        entity.Property(e => e.UserId).HasColumnName("user_id").IsRequired();
+        entity.Property(e => e.TokenHash).HasColumnName("token_hash").IsRequired();
+        entity.Property(e => e.ExpiresAt).HasColumnName("expires_at").IsRequired();
+        entity.Property(e => e.CreatedAt)
+            .HasColumnName("created_at")
+            .HasDefaultValueSql("now()")
+            .IsRequired();
+
+        entity.HasOne(e => e.User)
+            .WithMany()
+            .HasForeignKey(e => e.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        entity.HasIndex(e => e.TokenHash)
+            .IsUnique()
+            .HasDatabaseName("password_reset_tokens_token_hash_uidx");
+        entity.HasIndex(e => e.UserId).HasDatabaseName("password_reset_tokens_user_id_idx");
+        entity.HasIndex(e => e.ExpiresAt).HasDatabaseName("password_reset_tokens_expires_at_idx");
     }
 
     private static void ConfigureSessions(EntityTypeBuilder<Session> entity)

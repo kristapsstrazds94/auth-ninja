@@ -21,7 +21,7 @@ export function createRegisterHandler(ctx: AuthNinjaContext): RegisterRouteHandl
       return validationErrorResponse();
     }
 
-    const parsed = registerRequestSchema.safeParse(body);
+    const parsed = registerRequestSchema(ctx.config.passwordMinScore).safeParse(body);
     if (!parsed.success) {
       return validationErrorResponse();
     }

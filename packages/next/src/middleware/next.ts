@@ -1,9 +1,9 @@
 import type { AuthNinjaContext } from "../context.js";
 import { guardAuthApiRequest, type AuthApiGuardOptions } from "./guard.js";
-import { InMemoryRateLimiter } from "./rate-limit.js";
+import { InMemoryRateLimiter, type RateLimiter } from "./rate-limit.js";
 
 export type AuthMiddlewareOptions = AuthApiGuardOptions & {
-  rateLimiter?: InMemoryRateLimiter;
+  rateLimiter?: RateLimiter;
 };
 
 export type AuthApiGuard = (request: Request) => Promise<Response | undefined>;
@@ -16,7 +16,7 @@ export function createAuthApiGuard(
   ctx: AuthNinjaContext,
   options: AuthMiddlewareOptions = {},
 ): AuthApiGuard {
-  const rateLimiter = options.rateLimiter ?? new InMemoryRateLimiter();
+  const rateLimiter = options.rateLimiter ?? ctx.rateLimiter ?? new InMemoryRateLimiter();
   const guardCtx = { config: ctx.config, db: ctx.db, rateLimiter };
 
   return (request: Request) => guardAuthApiRequest(guardCtx, request, options);

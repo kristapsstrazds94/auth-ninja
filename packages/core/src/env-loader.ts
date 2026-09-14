@@ -150,6 +150,7 @@ export function envRecordToAuthNinjaConfig(
     apiRateLimitPerMinute: parsePositiveInt(env.AUTH_NINJA_API_RATE_LIMIT),
     csrfEnabled: parseBool(env.AUTH_NINJA_CSRF_ENABLED, true),
     redisUrl: parseOptionalString(env.AUTH_NINJA_REDIS_URL),
+    passwordMinScore: parsePositiveInt(env.AUTH_NINJA_PASSWORD_MIN_SCORE),
   };
 
   const result = authNinjaConfigSchema.safeParse(raw);

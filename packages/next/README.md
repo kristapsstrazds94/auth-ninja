@@ -23,6 +23,12 @@ await runAuthMigrations(handle);
 
 SQL migrations ship in the package `drizzle/` folder. Regenerate with `pnpm --filter @auth-ninja/next db:generate`.
 
+Apply pending migrations against PostgreSQL (requires `AUTH_NINJA_DATABASE_URL` in repo-root `.env`):
+
+```bash
+pnpm --filter @auth-ninja/next db:migrate
+```
+
 ## Register and login routes
 
 Wire App Router handlers with a shared context:

@@ -28,8 +28,21 @@ export { timingSafeEqualUtf8 } from "./crypto/timing.js";
 export {
   hashPassword,
   verifyPassword,
+  verifyPasswordWithTimingProtection,
   PASSWORD_HASH_OPTIONS,
 } from "./password.js";
+export {
+  assessPasswordStrength,
+  isPasswordStrongEnough,
+  type PasswordStrengthResult,
+} from "./password-policy.js";
+export { encryptField, decryptField } from "./field-encryption.js";
+export {
+  generatePasswordResetToken,
+  hashPasswordResetToken,
+  PASSWORD_RESET_TOKEN_BYTES,
+  PASSWORD_RESET_TOKEN_TTL_MS,
+} from "./password-reset-token.js";
 export {
   BACKUP_CODE_LENGTH,
   DEFAULT_BACKUP_CODE_COUNT,

@@ -25,6 +25,9 @@ internal static class PasswordHasher
         return FormatPhc(salt, hash);
     }
 
+    private static readonly Lazy<string> DummyPasswordHash = new(() =>
+        HashPassword("__auth_ninja_timing_dummy__"));
+
     public static bool VerifyPassword(string password, string passwordHash)
     {
         if (password.Length == 0 || passwordHash.Length == 0)
@@ -46,6 +49,14 @@ internal static class PasswordHasher
         {
             return false;
         }
+    }
+
+    /// <summary>Always runs Argon2id to reduce login timing side channels.</summary>
+    public static bool VerifyPasswordWithTimingProtection(string password, string? passwordHash)
+    {
+        var hashToVerify = passwordHash ?? DummyPasswordHash.Value;
+        var matches = VerifyPassword(password, hashToVerify);
+        return !string.IsNullOrEmpty(passwordHash) && matches;
     }
 
     private static byte[] HashBytes(byte[] password, byte[] salt)

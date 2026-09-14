@@ -37,6 +37,7 @@ function baseConfig(overrides: Partial<AuthNinjaConfig> = {}): AuthNinjaConfig {
     ipAuditEnabled: true,
     csrfEnabled: true,
     apiRateLimitPerMinute: 3,
+    passwordMinScore: 2,
     ...overrides,
   };
 }

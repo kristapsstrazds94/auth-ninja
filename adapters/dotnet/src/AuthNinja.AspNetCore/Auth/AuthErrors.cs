@@ -66,4 +66,11 @@ public static class AuthErrors
 public static class AuthGenericMessages
 {
     public const string RegistrationFailed = "Unable to complete registration.";
+
+    public const string PasswordResetRequested =
+        "If an account exists for that email, reset instructions will be sent.";
+
+    public const string PasswordResetFailed = "Unable to reset password.";
+
+    public const string PasswordResetSuccess = "Password has been reset.";
 }

@@ -49,7 +49,7 @@ internal sealed class TwoFaService
         var secret = TotpHelper.GenerateSecret();
         var otpauthUrl = TotpHelper.BuildOtpAuthUrl(secret, _options.TwoFaIssuer, user.Email);
 
-        user.TotpSecret = secret;
+        user.TotpSecret = FieldEncryption.Encrypt(secret, _options.Secret!);
         user.UpdatedAt = now;
         await _db.SaveChangesAsync(cancellationToken);
 
@@ -66,12 +66,14 @@ internal sealed class TwoFaService
 
         var (_, user) = await _sessions.ResolveAsync(sessionToken, now, cancellationToken);
 
-        if (user.MfaEnabled || string.IsNullOrEmpty(user.TotpSecret))
+        var totpSecret = DecryptTotpSecret(user.TotpSecret);
+
+        if (user.MfaEnabled || string.IsNullOrEmpty(totpSecret))
         {
             throw AuthErrors.Create(AuthErrorCode.MfaInvalid);
         }
 
-        if (!TotpHelper.VerifyCode(user.TotpSecret, request.Code!))
+        if (!TotpHelper.VerifyCode(totpSecret, request.Code!))
         {
             throw AuthErrors.Create(AuthErrorCode.MfaInvalid);
         }
@@ -110,7 +112,9 @@ internal sealed class TwoFaService
 
         var user = await _db.Users.FirstOrDefaultAsync(u => u.Id == userId, cancellationToken);
 
-        if (user is null || !user.MfaEnabled || string.IsNullOrEmpty(user.TotpSecret))
+        var totpSecret = DecryptTotpSecret(user?.TotpSecret);
+
+        if (user is null || !user.MfaEnabled || string.IsNullOrEmpty(totpSecret))
         {
             throw AuthErrors.Create(
                 AuthErrorCode.InvalidCredentials,
@@ -128,7 +132,7 @@ internal sealed class TwoFaService
             throw;
         }
 
-        if (!TotpHelper.VerifyCode(user.TotpSecret, request.Code!))
+        if (!TotpHelper.VerifyCode(totpSecret, request.Code!))
         {
             var failure = await _lockout.RecordFailureAsync(lockoutKey, now, cancellationToken);
             await _audit.PersistLoginAsync("failure", ipAddress, userAgent, user.Id, now, cancellationToken);
@@ -216,9 +220,11 @@ internal sealed class TwoFaService
 
         var secondFactorValid = false;
 
-        if (!string.IsNullOrEmpty(request.Code) && !string.IsNullOrEmpty(user.TotpSecret))
+        var totpSecret = DecryptTotpSecret(user.TotpSecret);
+
+        if (!string.IsNullOrEmpty(request.Code) && !string.IsNullOrEmpty(totpSecret))
         {
-            secondFactorValid = TotpHelper.VerifyCode(user.TotpSecret, request.Code);
+            secondFactorValid = TotpHelper.VerifyCode(totpSecret, request.Code);
         }
         else if (!string.IsNullOrEmpty(request.BackupCode))
         {
@@ -328,4 +334,7 @@ internal sealed class TwoFaService
 
         ValidateTotpCode(request.Code);
     }
+
+    private string? DecryptTotpSecret(string? stored) =>
+        string.IsNullOrEmpty(stored) ? null : FieldEncryption.Decrypt(stored, _options.Secret!);
 }

@@ -119,6 +119,11 @@ export async function invalidateSessionByToken(
   await db.delete(sessions).where(eq(sessions.tokenHash, tokenHash));
 }
 
+/** Invalidate every session for a user (e.g. after password reset). */
+export async function invalidateAllUserSessions(db: AuthDb, userId: string): Promise<void> {
+  await db.delete(sessions).where(eq(sessions.userId, userId));
+}
+
 /**
  * Invalidate any existing session cookie and create a fresh session (session fixation prevention).
  */

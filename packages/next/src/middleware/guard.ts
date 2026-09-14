@@ -6,12 +6,12 @@ import { AUTH_CSRF_HEADER, DEFAULT_AUTH_PATH_PREFIX } from "./constants.js";
 import { verifyCsrfToken } from "./csrf.js";
 import { recordSuspiciousIpAudit, runIpAuditHook } from "./ip-audit-hook.js";
 import { isAuthApiPath, requiresCsrfProtection } from "./paths.js";
-import { InMemoryRateLimiter } from "./rate-limit.js";
+import { InMemoryRateLimiter, type RateLimiter } from "./rate-limit.js";
 
 export type AuthApiGuardContext = {
   config: AuthNinjaConfig;
   db: AuthDb;
-  rateLimiter?: InMemoryRateLimiter;
+  rateLimiter?: RateLimiter;
 };
 
 export type AuthApiGuardOptions = {
@@ -41,7 +41,7 @@ export async function guardAuthApiRequest(
   const nowMs = options.nowMs ?? Date.now();
   const rateLimiter = ctx.rateLimiter ?? new InMemoryRateLimiter();
 
-  const rateLimit = rateLimiter.check(
+  const rateLimit = await rateLimiter.check(
     meta.ipAddress,
     ctx.config.apiRateLimitPerMinute,
     60_000,

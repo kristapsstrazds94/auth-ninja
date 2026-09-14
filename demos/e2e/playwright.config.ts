@@ -4,6 +4,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 const repoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const hasDatabase = Boolean(process.env.AUTH_NINJA_DATABASE_URL);
+const e2ePort = process.env.E2E_PORT ?? "3001";
+const e2eBaseUrl = process.env.E2E_BASE_URL ?? `http://localhost:${e2ePort}`;
 
 export default defineConfig({
   testDir: "./tests",
@@ -13,7 +15,7 @@ export default defineConfig({
   workers: 1,
   reporter: "list",
   use: {
-    baseURL: process.env.E2E_BASE_URL ?? "http://localhost:3000",
+    baseURL: e2eBaseUrl,
     trace: "on-first-retry",
   },
   projects: [
@@ -25,16 +27,17 @@ export default defineConfig({
   webServer: hasDatabase
     ? {
         command: "pnpm --filter @auth-ninja/demo-next-fullstack dev",
-        url: "http://localhost:3000",
-        reuseExistingServer: !process.env.CI,
+        url: e2eBaseUrl,
+        // Dedicated E2E port avoids clashing with a local dev server on 3000.
+        reuseExistingServer: false,
         timeout: 120_000,
         cwd: repoRoot,
         env: {
           ...process.env,
+          PORT: e2ePort,
           AUTH_NINJA_SECRET:
             process.env.AUTH_NINJA_SECRET ?? "test-secret-min-32-chars-long-!!",
-          AUTH_NINJA_BASE_URL:
-            process.env.AUTH_NINJA_BASE_URL ?? "http://localhost:3000",
+          AUTH_NINJA_BASE_URL: e2eBaseUrl,
           AUTH_NINJA_DATABASE_URL: process.env.AUTH_NINJA_DATABASE_URL!,
           AUTH_NINJA_LOCKOUT_MAX_ATTEMPTS: "3",
           AUTH_NINJA_LOCKOUT_WINDOW_MINUTES: "15",

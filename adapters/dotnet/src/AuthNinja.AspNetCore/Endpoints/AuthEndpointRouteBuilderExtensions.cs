@@ -25,6 +25,8 @@ public static class AuthEndpointRouteBuilderExtensions
         group.MapPost("/logout", LogoutAsync);
         group.MapGet("/session", GetSessionAsync);
         group.MapGet("/csrf", GetCsrfAsync);
+        group.MapPost("/password-reset/request", PasswordResetRequestAsync);
+        group.MapPost("/password-reset/confirm", PasswordResetConfirmAsync);
 
         endpoints.MapAuthNinjaTwoFa();
         endpoints.MapAuthNinjaPasskeys();
@@ -148,5 +150,43 @@ public static class AuthEndpointRouteBuilderExtensions
     {
         var body = auth.GetCsrfToken(DateTimeOffset.UtcNow);
         return AuthHttpResults.Json(body, StatusCodes.Status200OK);
+    }
+
+    private static async Task<IResult> PasswordResetRequestAsync(
+        PasswordResetRequest request,
+        PasswordResetService passwordReset,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var (body, _) = await passwordReset.RequestAsync(
+                request,
+                DateTimeOffset.UtcNow,
+                cancellationToken);
+            return AuthHttpResults.Json(body, StatusCodes.Status200OK);
+        }
+        catch (AuthNinjaException ex)
+        {
+            return AuthHttpResults.Error(ex);
+        }
+    }
+
+    private static async Task<IResult> PasswordResetConfirmAsync(
+        PasswordResetConfirmRequest request,
+        PasswordResetService passwordReset,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var body = await passwordReset.ConfirmAsync(
+                request,
+                DateTimeOffset.UtcNow,
+                cancellationToken);
+            return AuthHttpResults.Json(body, StatusCodes.Status200OK);
+        }
+        catch (AuthNinjaException ex)
+        {
+            return AuthHttpResults.Error(ex);
+        }
     }
 }

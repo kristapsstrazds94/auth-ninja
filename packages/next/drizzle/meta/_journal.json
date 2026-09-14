@@ -8,6 +8,13 @@
       "when": 1789040925411,
       "tag": "0000_omniscient_captain_flint",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1789135000000,
+      "tag": "0001_password_reset_tokens",
+      "breakpoints": true
     }
   ]
 }

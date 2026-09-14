@@ -1,10 +1,32 @@
+import { isPasswordStrongEnough } from "@auth-ninja/core";
 import { z } from "zod";
 
-/** Matches OpenAPI `RegisterRequest`. */
-export const registerRequestSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8).max(128),
-});
+const passwordFieldSchema = z.string().min(8).max(128);
+
+function passwordStrengthRefine(minScore: number) {
+  return (data: { password: string }, ctx: z.RefinementCtx) => {
+    if (!isPasswordStrongEnough(data.password, minScore)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Password does not meet strength requirements.",
+        path: ["password"],
+      });
+    }
+  };
+}
+
+/** Matches OpenAPI `RegisterRequest` with zxcvbn strength check. */
+export function registerRequestSchema(minScore = 2) {
+  return z
+    .object({
+      email: z.string().email(),
+      password: passwordFieldSchema,
+    })
+    .superRefine(passwordStrengthRefine(minScore));
+}
+
+/** Default register schema (min zxcvbn score 2). */
+export const defaultRegisterRequestSchema = registerRequestSchema();
 
 /** Matches OpenAPI `LoginRequest`. */
 export const loginRequestSchema = z.object({
@@ -12,8 +34,30 @@ export const loginRequestSchema = z.object({
   password: z.string().min(1).max(128),
 });
 
-export type RegisterRequest = z.infer<typeof registerRequestSchema>;
+export type RegisterRequest = z.infer<ReturnType<typeof registerRequestSchema>>;
 export type LoginRequest = z.infer<typeof loginRequestSchema>;
+
+/** Matches OpenAPI `PasswordResetRequest`. */
+export const passwordResetRequestSchema = z.object({
+  email: z.string().email(),
+});
+
+/** Matches OpenAPI `PasswordResetConfirmRequest`. */
+export function passwordResetConfirmRequestSchema(minScore = 2) {
+  return z
+    .object({
+      token: z.string().min(32),
+      password: passwordFieldSchema,
+    })
+    .superRefine(passwordStrengthRefine(minScore));
+}
+
+export const defaultPasswordResetConfirmRequestSchema = passwordResetConfirmRequestSchema();
+
+export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
+export type PasswordResetConfirmRequest = z.infer<
+  ReturnType<typeof passwordResetConfirmRequestSchema>
+>;
 
 /** Matches OpenAPI `TotpCodeRequest`. */
 export const totpCodeRequestSchema = z.object({

@@ -144,6 +144,48 @@ namespace AuthNinja.AspNetCore.Data.Migrations
                     b.ToTable("credentials", (string)null);
                 });
 
+            modelBuilder.Entity("AuthNinja.AspNetCore.Data.Entities.PasswordResetToken", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<DateTimeOffset>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("token_hash");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiresAt")
+                        .HasDatabaseName("password_reset_tokens_expires_at_idx");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("password_reset_tokens_token_hash_uidx");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("password_reset_tokens_user_id_idx");
+
+                    b.ToTable("password_reset_tokens", (string)null);
+                });
+
             modelBuilder.Entity("AuthNinja.AspNetCore.Data.Entities.Session", b =>
                 {
                     b.Property<Guid>("Id")
@@ -271,6 +313,17 @@ namespace AuthNinja.AspNetCore.Data.Migrations
                 {
                     b.HasOne("AuthNinja.AspNetCore.Data.Entities.User", "User")
                         .WithMany("Credentials")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("AuthNinja.AspNetCore.Data.Entities.PasswordResetToken", b =>
+                {
+                    b.HasOne("AuthNinja.AspNetCore.Data.Entities.User", "User")
+                        .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();

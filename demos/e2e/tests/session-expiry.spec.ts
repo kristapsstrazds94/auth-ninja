@@ -39,7 +39,7 @@ test.describe("session expiry", () => {
     await expireSessionIdle(sessionToken);
     await page.reload();
 
-    await expect(page.getByRole("heading", { name: "Auth-Ninja Next demo" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Auth-Ninja demo" })).toBeVisible();
     await expect(page.getByRole("main").getByRole("link", { name: "Log in" })).toBeVisible();
     await expect(page.getByText(email)).not.toBeVisible();
   });
