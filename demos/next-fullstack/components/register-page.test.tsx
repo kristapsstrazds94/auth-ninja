@@ -107,11 +107,14 @@ describe("RegisterPage", () => {
     });
 
     const emailInput = container.querySelector('input[type="email"]') as HTMLInputElement;
-    const passwordInput = container.querySelector('input[type="password"]') as HTMLInputElement;
+    const passwordInputs = container.querySelectorAll('input[type="password"]');
+    const passwordInput = passwordInputs[0] as HTMLInputElement;
+    const confirmPasswordInput = passwordInputs[1] as HTMLInputElement;
 
     await act(async () => {
       setInputValue(emailInput, "new@test.local");
       setInputValue(passwordInput, "secure-password-1");
+      setInputValue(confirmPasswordInput, "secure-password-1");
     });
 
     const form = container.querySelector("form") as HTMLFormElement;
@@ -129,5 +132,66 @@ describe("RegisterPage", () => {
 
     expect(container.textContent).toContain("Signed in");
     expect(container.textContent).toContain("new@test.local");
+  });
+
+  it("shows a validation error when passwords do not match", async () => {
+    const fetchFn = vi.fn(
+      asFetchMock(async (input) => {
+        const url = String(input);
+        if (url.endsWith("/auth/session")) {
+          return Response.json(
+            { code: "SESSION_EXPIRED", message: "Session expired." },
+            { status: 401 },
+          );
+        }
+        if (url.endsWith(AUTH_CSRF_PATH)) {
+          return csrfResponse();
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    cleanup = () => {
+      act(() => {
+        root.unmount();
+      });
+      container.remove();
+    };
+
+    act(() => {
+      root.render(
+        createElement(AuthProvider, {
+          baseUrl: BASE_URL,
+          fetchFn,
+          children: createElement(FlowApp),
+        }),
+      );
+    });
+
+    const emailInput = container.querySelector('input[type="email"]') as HTMLInputElement;
+    const passwordInputs = container.querySelectorAll('input[type="password"]');
+    const passwordInput = passwordInputs[0] as HTMLInputElement;
+    const confirmPasswordInput = passwordInputs[1] as HTMLInputElement;
+
+    await act(async () => {
+      setInputValue(emailInput, "new@test.local");
+      setInputValue(passwordInput, "secure-password-1");
+      setInputValue(confirmPasswordInput, "different-password");
+    });
+
+    const form = container.querySelector("form") as HTMLFormElement;
+
+    await act(async () => {
+      form.requestSubmit();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(container.textContent).toContain("Passwords do not match.");
+    expect(
+      fetchFn.mock.calls.some(([url]) => String(url).endsWith("/auth/register")),
+    ).toBe(false);
   });
 });

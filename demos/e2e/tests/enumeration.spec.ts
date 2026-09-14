@@ -64,7 +64,8 @@ test.describe("user enumeration resistance", () => {
 
     await page.goto("/register");
     await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(TEST_PASSWORD);
+    await page.getByLabel("Password", { exact: true }).fill(TEST_PASSWORD);
+    await page.getByLabel("Confirm password").fill(TEST_PASSWORD);
     await page.getByRole("button", { name: "Create account" }).click();
     const registerError = await page.locator(".error").textContent();
     expect(registerError).toBe(AUTH_GENERIC_MESSAGES.REGISTRATION_FAILED);

@@ -10,6 +10,7 @@ import {
 } from "@auth-ninja/react";
 import { AuthDemoCard } from "@/components/auth-demo-card";
 import { AuthPageShell } from "@/components/auth-page-shell";
+import { DemoConsoleCard } from "@/components/demo-console-card";
 import { Protected } from "@/components/protected";
 import { formatAuthError } from "@/lib/auth-error";
 import {
@@ -142,13 +143,13 @@ function PasskeyManagePanel() {
   }
 
   return (
-    <div className="card stack">
-      <header className="page-header">
+    <DemoConsoleCard chromeTitle="auth-ninja.demo / passkeys">
+      <header className="demo-console-header">
         <h1>Passkeys</h1>
         <p>Register WebAuthn credentials for passwordless sign-in on supported devices.</p>
       </header>
 
-      <div className="row">
+      <div className="demo-console-actions row">
         <button type="button" className="btn" disabled={busy} onClick={() => void handleRegister()}>
           {busy ? "Waiting for passkey…" : "Register passkey"}
         </button>
@@ -185,6 +186,10 @@ function PasskeyManagePanel() {
       )}
 
       {error ? <p className="error">{error}</p> : null}
-    </div>
+
+      <p className="demo-console-footer-link muted">
+        <Link href="/">Back to dashboard</Link>
+      </p>
+    </DemoConsoleCard>
   );
 }
