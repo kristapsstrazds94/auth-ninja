@@ -15,7 +15,7 @@ const SUITES = [
       join(semgrepDir, "auth-ninja.ts"),
       join(fixturesDir, "packages", "session-storage.ts"),
       join(fixturesDir, "packages", "weak-hash.ts"),
-      join(fixturesDir, "packages", "core", "password-fixture.ts"),
+      join(fixturesDir, "packages", "core", "password.ts"),
       join(fixturesDir, "packages", "react", "src", "styled-ui.tsx"),
     ],
   },

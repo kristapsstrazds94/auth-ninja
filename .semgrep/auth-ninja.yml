@@ -46,7 +46,7 @@ rules:
     languages: [javascript, typescript]
     paths:
       include:
-        - "**/password*.ts"
+        - "**/password.ts"
         - "**/backup-codes.ts"
       exclude:
         - "**/*.test.*"
