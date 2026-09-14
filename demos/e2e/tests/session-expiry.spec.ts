@@ -59,7 +59,10 @@ test.describe("session expiry", () => {
     await expireSessionIdle(sessionToken);
     await page.reload();
 
-    await expect(page.getByText("Sign in to access this page.")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Sign in required" })).toBeVisible();
+    await expect(
+      page.getByText("This page is only available to authenticated users."),
+    ).toBeVisible();
     await expect(page.getByRole("link", { name: "Go to login" })).toBeVisible();
   });
 });
