@@ -18,6 +18,8 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
   const centeredAuth =
     isCenteredAuthPath(pathname) ||
     (pathname.startsWith("/passkeys") && !isAuthenticated);
+  /** Login/register do not need a session check before first paint. */
+  const skipSessionGate = isCenteredAuthPath(pathname);
 
   async function handleRetry() {
     setRetrying(true);
@@ -30,7 +32,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
     }
   }
 
-  if (pending) {
+  if (pending && !skipSessionGate) {
     return (
       <div className="app-shell-loading">
         <Spinner label="Loading session…" size="lg" centered />
@@ -38,7 +40,7 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (sessionError) {
+  if (sessionError && !skipSessionGate) {
     return (
       <div className="app-shell-loading">
         <div className="card stack app-shell-error">

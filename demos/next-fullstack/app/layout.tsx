@@ -11,6 +11,10 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
+      <head>
+        {/* Auth card hero logo — LCP on /login, /register, etc. */}
+        <link rel="preload" as="image" href="/logo.png" fetchPriority="high" />
+      </head>
       <body>
         <DemoAuthProvider>
           <DemoShell>{children}</DemoShell>

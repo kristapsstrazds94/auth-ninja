@@ -23,6 +23,7 @@ export function DemoLogo({
           height={88}
           aria-hidden
           priority
+          fetchPriority="high"
         />
         <p className="demo-logo-wordmark demo-logo-wordmark-dark">
           <span className="demo-logo-wordmark-light">Auth</span>
@@ -42,6 +43,7 @@ export function DemoLogo({
           width={280}
           height={280}
           priority
+          fetchPriority="high"
         />
       </div>
     );

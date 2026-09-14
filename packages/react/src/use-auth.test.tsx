@@ -102,6 +102,33 @@ describe("useAuth", () => {
     expect(auth.sessionError).toBeNull();
   });
 
+  it("skips session fetch on mount when sessionCheckOnMount is false", async () => {
+    const fetchFn = vi.fn(async () =>
+      Response.json(
+        { code: "SESSION_EXPIRED", message: "Session expired." },
+        { status: 401 },
+      ),
+    );
+
+    await act(async () => {
+      root.render(
+        createElement(
+          AuthProvider,
+          { baseUrl: BASE_URL, fetchFn, sessionCheckOnMount: false },
+          createElement(Probe),
+        ),
+      );
+    });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(auth.isLoading).toBe(false);
+    expect(auth.isAuthenticated).toBe(false);
+    expect(fetchFn).not.toHaveBeenCalled();
+  });
+
   it("records sessionError when the session check fails", async () => {
     const fetchFn = vi.fn(async () =>
       Response.json({ code: "RATE_LIMITED", message: "Too many requests." }, { status: 429 }),

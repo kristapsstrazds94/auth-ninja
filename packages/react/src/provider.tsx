@@ -39,6 +39,8 @@ export type AuthProviderProps = {
   sessionIdleRefresh?: boolean;
   /** Sync session state across browser tabs. Default `true`. */
   sessionSync?: boolean;
+  /** When false, skip GET /auth/session on mount (e.g. public login pages). Default `true`. */
+  sessionCheckOnMount?: boolean;
 };
 
 export type AuthContextValue = AuthState & {
@@ -55,6 +57,7 @@ export function AuthProvider({
   sessionIdleMinutes = DEFAULT_SESSION_IDLE_MINUTES,
   sessionIdleRefresh = true,
   sessionSync = true,
+  sessionCheckOnMount = true,
 }: AuthProviderProps) {
   const client = useMemo(
     () => createAuthClient({ baseUrl, fetchFn }),
@@ -81,7 +84,13 @@ export function AuthProvider({
   }, [client]);
 
   useEffect(() => {
+    if (!sessionCheckOnMount) {
+      setIsLoading(false);
+      return;
+    }
+
     let cancelled = false;
+    setIsLoading(true);
 
     void (async () => {
       try {
@@ -98,7 +107,7 @@ export function AuthProvider({
     return () => {
       cancelled = true;
     };
-  }, [refreshSession]);
+  }, [sessionCheckOnMount, refreshSession]);
 
   useEffect(() => {
     if (!sessionSync) return;
