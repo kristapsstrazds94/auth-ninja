@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="assets/logo.png" alt="Auth-Ninja" width="220" />
+  <span style="background-color:#ffffff;display:inline-block;padding:16px 24px;border-radius:12px">
+    <img src="assets/logo.png" alt="Auth-Ninja" width="220" />
+  </span>
 </p>
 
 <h1 align="center">Auth-Ninja</h1>
@@ -13,11 +15,11 @@
 </p>
 
 <p align="center">
-  <a href="#install">Install</a> ·
-  <a href="#architecture">Architecture</a> ·
-  <a href="#security">Security</a> ·
-  <a href="#adding-to-an-existing-project">Existing project</a> ·
-  <a href="#demos">Demos</a>
+  <a href="#install" style="color:#5b2cff">Install</a> ·
+  <a href="#architecture" style="color:#5b2cff">Architecture</a> ·
+  <a href="#security" style="color:#5b2cff">Security</a> ·
+  <a href="#adding-to-an-existing-project" style="color:#5b2cff">Existing project</a> ·
+  <a href="#demos" style="color:#5b2cff">Demos</a>
 </p>
 
 Pick a backend adapter — both implement the same [OpenAPI contract](packages/protocol/openapi.json) and share configuration via `@auth-ninja/core`:
@@ -31,7 +33,7 @@ Pick a backend adapter — both implement the same [OpenAPI contract](packages/p
 
 ---
 
-## Table of contents
+<h2 style="color:#5b2cff">Table of contents</h2>
 
 - [Architecture](#architecture)
 - [Security](#security)
@@ -46,7 +48,7 @@ Pick a backend adapter — both implement the same [OpenAPI contract](packages/p
 
 ---
 
-## Architecture
+<h2 style="color:#5b2cff">Architecture</h2>
 
 The React client talks to `/auth/*` over **HttpOnly cookies** — never `localStorage`. Pick **one** server adapter:
 
@@ -93,7 +95,7 @@ All npm packages publish at version **0.1.0** and version together via [Changese
 
 ---
 
-## Security
+<h2 style="color:#5b2cff">Security</h2>
 
 Auth-Ninja is **fail-closed** — invalid sessions, CSRF tokens, and rate limits deny access. Protected routes never silently fall back to anonymous.
 
@@ -143,7 +145,7 @@ Full threat analysis: [`docs/THREAT-MODEL.md`](docs/THREAT-MODEL.md). Report vul
 
 ---
 
-## Install
+<h2 style="color:#5b2cff">Install</h2>
 
 The CLI scaffolds env files, wires the matching adapter, and validates your config. Works for **new or existing** projects.
 
@@ -226,7 +228,7 @@ See [Configuration](#configuration) for session, lockout, 2FA, passkey, and rate
 
 ---
 
-## Adding to an existing project
+<h2 style="color:#5b2cff">Adding to an existing project</h2>
 
 `auth-ninja init` is safe on existing codebases — it **never overwrites** an existing `.env` and skips files that already exist.
 
@@ -458,7 +460,7 @@ function Dashboard() {
 
 ---
 
-## Shared concepts
+<h2 style="color:#5b2cff">Shared concepts</h2>
 
 These apply regardless of which backend adapter you choose.
 
@@ -518,7 +520,7 @@ Sessions use an HttpOnly `auth_session` cookie (`Secure`, `SameSite=Strict`). Lo
 
 ---
 
-## Next.js
+<h2 style="color:#5b2cff">Next.js</h2>
 
 Use `@auth-ninja/next` when your auth API runs on **Next.js App Router** (full-stack or as a standalone API).
 
@@ -549,7 +551,7 @@ auth-ninja demo
 
 ---
 
-## .NET
+<h2 style="color:#5b2cff">.NET</h2>
 
 Use `AuthNinja.AspNetCore` when your auth API runs on **ASP.NET Core**. The React client is the same `@auth-ninja/react` package used with Next.js.
 
@@ -589,7 +591,7 @@ EF Core entities mirror the Next.js Drizzle schema:
 
 ---
 
-## Demos
+<h2 style="color:#5b2cff">Demos</h2>
 
 Throwaway UI lives under [`demos/`](demos/) — **not published** to npm. Use them to explore flows and copy patterns, not components.
 
@@ -603,7 +605,7 @@ Each demo includes login, register, TOTP 2FA, and passkey pages wired to headles
 
 ---
 
-## Development
+<h2 style="color:#5b2cff">Development</h2>
 
 Contributors working on the monorepo itself:
 
@@ -624,6 +626,6 @@ pnpm release
 
 ---
 
-## License
+<h2 style="color:#5b2cff">License</h2>
 
 [MIT](LICENSE)
