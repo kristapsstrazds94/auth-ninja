@@ -47,7 +47,6 @@ export function DemoNav() {
             <>
               <NavLink href="/login">Log in</NavLink>
               <NavLink href="/register">Register</NavLink>
-              <NavLink href="/passkeys">Passkeys</NavLink>
             </>
           )}
         </div>
