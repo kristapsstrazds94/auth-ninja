@@ -1,8 +1,24 @@
-# Auth-Ninja
+<p align="center">
+  <img src="assets/logo.png" alt="Auth-Ninja" width="220" />
+</p>
 
-Secure, reusable authentication for React apps — headless hooks on the client, battle-tested server adapters on the backend.
+<h1 align="center">Auth-Ninja</h1>
 
-Auth-Ninja ships **no UI components**. You bring your own login screens; the packages handle sessions, CSRF, rate limiting, TOTP 2FA, and WebAuthn passkeys with secure defaults baked in.
+<p align="center">
+  Secure, reusable authentication for React apps — headless hooks on the client, battle-tested server adapters on the backend.
+</p>
+
+<p align="center">
+  <strong>No UI components.</strong> You bring your own login screens; Auth-Ninja handles sessions, CSRF, rate limiting, TOTP 2FA, and WebAuthn passkeys with secure defaults baked in.
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="#architecture">Architecture</a> ·
+  <a href="#security">Security</a> ·
+  <a href="#adding-to-an-existing-project">Existing project</a> ·
+  <a href="#demos">Demos</a>
+</p>
 
 Pick a backend adapter — both implement the same [OpenAPI contract](packages/protocol/openapi.json) and share configuration via `@auth-ninja/core`:
 
@@ -17,36 +33,22 @@ Pick a backend adapter — both implement the same [OpenAPI contract](packages/p
 
 ## Table of contents
 
+- [Architecture](#architecture)
+- [Security](#security)
+- [Install](#install)
+- [Adding to an existing project](#adding-to-an-existing-project)
 - [Shared concepts](#shared-concepts)
-  - [Architecture](#architecture)
-  - [Packages](#packages)
-  - [React client setup](#react-client-setup)
-  - [Configuration](#configuration)
-  - [Auth API](#auth-api)
-  - [Security defaults](#security-defaults)
 - [Next.js](#nextjs)
-  - [Compatibility](#nextjs-compatibility)
-  - [Quick start](#nextjs-quick-start)
-  - [Full-stack integration](#nextjs-full-stack)
-  - [Vite SPA + Next.js API](#vite-spa--nextjs-api)
 - [.NET](#net)
-  - [Compatibility](#net-compatibility)
-  - [Quick start](#net-quick-start)
-  - [ASP.NET Core integration](#aspnet-core-integration)
-  - [React SPA client](#react-spa-client)
 - [Demos](#demos)
 - [Development](#development)
 - [License](#license)
 
 ---
 
-## Shared concepts
+## Architecture
 
-These apply regardless of which backend adapter you choose.
-
-### Architecture
-
-The React client talks to `/auth/*` over HttpOnly cookies — never localStorage. Pick **one** server adapter:
+The React client talks to `/auth/*` over **HttpOnly cookies** — never `localStorage`. Pick **one** server adapter:
 
 ```mermaid
 flowchart TB
@@ -78,33 +80,332 @@ flowchart TB
 
 ### Packages
 
-| Package | Registry | Used by |
-|---------|----------|---------|
-| [`@auth-ninja/core`](packages/core) | npm | Both stacks — config, errors, crypto |
-| [`@auth-ninja/protocol`](packages/protocol) | npm | Contract tests, code generation |
-| [`@auth-ninja/react`](packages/react) | npm | Both stacks — headless React hooks |
-| [`@auth-ninja/next`](packages/next) | npm | **Next.js only** |
-| [`@auth-ninja/cli`](packages/cli) | npm | Scaffolding for both stacks |
-| [`AuthNinja.AspNetCore`](adapters/dotnet) | NuGet | **.NET only** |
+| Package | Registry | Role |
+|---------|----------|------|
+| [`@auth-ninja/core`](packages/core) | npm | Config schema, errors, crypto, password/TOTP helpers |
+| [`@auth-ninja/protocol`](packages/protocol) | npm | OpenAPI contract — source of truth for both backends |
+| [`@auth-ninja/react`](packages/react) | npm | Headless React hooks (`AuthProvider`, `useAuth`, `RequireAuth`) |
+| [`@auth-ninja/next`](packages/next) | npm | Next.js route handlers, middleware, Drizzle schema |
+| [`@auth-ninja/cli`](packages/cli) | npm | `auth-ninja` scaffolding and deployment checks |
+| [`AuthNinja.AspNetCore`](adapters/dotnet) | NuGet | ASP.NET Core middleware and endpoints |
 
-All npm packages are published at version **0.1.0** and versioned together via [Changesets](.changeset/README.md).
+All npm packages publish at version **0.1.0** and version together via [Changesets](.changeset/README.md).
 
-### React client setup
+---
 
-`@auth-ninja/react` is headless and identical for both stacks. Build your own forms; use hooks for state and API calls.
+## Security
 
-#### Core hooks
+Auth-Ninja is **fail-closed** — invalid sessions, CSRF tokens, and rate limits deny access. Protected routes never silently fall back to anonymous.
 
-| Hook / component | Purpose |
-|------------------|---------|
-| `AuthProvider` | Session context, idle refresh, cross-tab sync |
-| `useAuth()` | `user`, `login`, `register`, `logout`, `isLoading` |
-| `RequireAuth` | Render children only when authenticated |
-| `useSession()` | Low-level session fetch state |
-| `use2FA()` | TOTP enroll, confirm, verify, disable |
-| `usePasskey()` | WebAuthn register, login, list, delete |
+### Cryptography & secrets
 
-#### Minimal login example
+| Area | Implementation |
+|------|----------------|
+| Password hashing | **Argon2id** via `@node-rs/argon2` (OWASP-aligned: 19 MiB, t=2, p=1) |
+| Session tokens | Random IDs stored server-side as **SHA-256** hashes; cookie is HttpOnly only |
+| TOTP seeds at rest | **AES-256-GCM** field encryption keyed from `AUTH_NINJA_SECRET` |
+| Backup / recovery codes | Hashed; single-use |
+| Password reset tokens | Hashed; short TTL; single-use |
+| Secret comparison | **Constant-time** compare for passwords, TOTP codes, and API keys |
+| Signing key | `AUTH_NINJA_SECRET` — ≥ 32 cryptographically random characters |
+
+### Session & transport
+
+| Control | Default |
+|---------|---------|
+| Session storage | **HttpOnly, Secure, SameSite=Strict** cookie — never `localStorage` / `sessionStorage` |
+| Idle timeout | 15 minutes (refreshed on activity) |
+| Absolute max lifetime | 8 hours |
+| Session fixation | Session ID **regenerated on login** |
+| Production transport | HTTPS required; `auth-ninja doctor --production --strict` validates this |
+
+### Attack surface controls
+
+| Control | Default |
+|---------|---------|
+| CSRF | Signed `X-CSRF-Token` on all state-changing routes |
+| Rate limiting | Per-IP on auth endpoints (100 req/min default) |
+| Account lockout | Configurable failed-attempt threshold (5 attempts / 15 min window) |
+| Auth error messages | **Generic** — no user enumeration on login, register, or reset |
+| IP audit | Login, logout, lockout, and suspicious IP events persisted |
+| Passkeys | WebAuthn with origin + RP ID validation; challenges stored server-side with short TTL |
+| Password policy | zxcvbn-based strength checks in `@auth-ninja/core` |
+
+### Optional production hardening
+
+| Feature | When to use |
+|---------|-------------|
+| **Redis** (`AUTH_NINJA_REDIS_URL`) | Multi-instance deployments — distributed rate limiting and lockout |
+| **`auth-ninja doctor --production --strict`** | Pre-launch config validation (secret strength, HTTPS, cookie flags, CSRF/RP ID alignment) |
+| **Semgrep / CI** | Monorepo runs security lint rules on every PR |
+
+Full threat analysis: [`docs/THREAT-MODEL.md`](docs/THREAT-MODEL.md). Report vulnerabilities per [`SECURITY.md`](SECURITY.md).
+
+---
+
+## Install
+
+The CLI scaffolds env files, wires the matching adapter, and validates your config. Works for **new or existing** projects.
+
+### Prerequisites
+
+| Requirement | Next.js stack | .NET stack |
+|-------------|---------------|------------|
+| Runtime | Node.js ≥ 20 | .NET 10 (`net10.0`) |
+| Database | PostgreSQL 14+ | PostgreSQL 14+ |
+| Frontend | React ^18 or ^19 | React ^18 or ^19 (Vite SPA) |
+| Optional | Redis (recommended in production) | Redis (recommended in production) |
+
+### Quick start (any stack)
+
+```bash
+# 1. Scaffold into your project (auto-detects Next.js, Vite, or .NET)
+pnpm dlx @auth-ninja/cli init
+
+# Or pick a stack explicitly:
+pnpm dlx @auth-ninja/cli init --stack next
+pnpm dlx @auth-ninja/cli init --stack vite
+pnpm dlx @auth-ninja/cli init --stack dotnet
+
+# 2. Generate a signing secret (copy output into .env)
+auth-ninja keys generate
+
+# 3. Set your database URL in .env, then validate
+auth-ninja doctor
+
+# 4. Try the local demo (optional)
+auth-ninja demo                  # Next.js full-stack → http://localhost:3000
+auth-ninja demo --stack vite     # Vite SPA + Next.js API → http://localhost:5173
+auth-ninja demo --stack dotnet   # Vite SPA + .NET API → http://localhost:5174
+```
+
+### Manual package install
+
+If you prefer not to use the CLI:
+
+<details>
+<summary><strong>Next.js full-stack</strong></summary>
+
+```bash
+pnpm add @auth-ninja/core @auth-ninja/next @auth-ninja/react
+```
+
+</details>
+
+<details>
+<summary><strong>Vite SPA (client only)</strong></summary>
+
+```bash
+pnpm add @auth-ninja/react
+```
+
+Your auth API still needs `@auth-ninja/next` or `AuthNinja.AspNetCore` on the backend.
+
+</details>
+
+<details>
+<summary><strong>ASP.NET Core</strong></summary>
+
+```bash
+dotnet add package AuthNinja.AspNetCore
+```
+
+</details>
+
+### Required environment variables
+
+Copy [`.env.example`](.env.example) to `.env`. Both adapters read the same `AUTH_NINJA_*` variables:
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `AUTH_NINJA_SECRET` | Yes | ≥ 32 random chars — `auth-ninja keys generate` |
+| `AUTH_NINJA_BASE_URL` | Yes | Public URL of the auth API |
+| `AUTH_NINJA_DATABASE_URL` | Yes | PostgreSQL connection string |
+
+See [Configuration](#configuration) for session, lockout, 2FA, passkey, and rate-limit options.
+
+---
+
+## Adding to an existing project
+
+`auth-ninja init` is safe on existing codebases — it **never overwrites** an existing `.env` and skips files that already exist.
+
+### What your project needs
+
+| Stack | Server requirements | Client requirements |
+|-------|--------------------|--------------------|
+| **Next.js full-stack** | App Router, PostgreSQL, `/auth/*` route handlers + middleware | `AuthProvider` wrapping your app |
+| **Vite + separate API** | Next.js or .NET API exposing `/auth/*` | `AuthProvider`, Vite env plugin, dev proxy for `/auth` |
+| **.NET API + SPA** | ASP.NET Core 10, PostgreSQL, EF migrations | Same Vite client setup as above |
+
+After init, configure `AUTH_NINJA_DATABASE_URL`, run migrations, and verify with `auth-ninja doctor`.
+
+### What `auth-ninja init` creates
+
+| Stack | Files scaffolded |
+|-------|------------------|
+| **next** | `lib/auth-ninja.ts`, `app/auth/*/route.ts`, `middleware.ts` (or merge snippet) |
+| **vite** | `auth-ninja.vite-plugin.snippet.ts`, `auth-ninja.client.snippet.tsx` |
+| **dotnet** | `auth-ninja.program.snippet.cs`, `.env.example` |
+| **all** | `.env` (if missing), `.env.example`, client env vars when Vite is detected |
+
+### Integration snippets
+
+Expand the section for your stack and copy the patterns into your project.
+
+<details>
+<summary><strong>Next.js — server context (<code>lib/auth-ninja.ts</code>)</strong></summary>
+
+```ts
+import { loadAuthNinjaConfig } from "@auth-ninja/core";
+import {
+  createAuthDb,
+  createAuthNinjaContext,
+  runAuthMigrations,
+  type AuthNinjaContext,
+} from "@auth-ninja/next";
+
+let authPromise: Promise<AuthNinjaContext> | undefined;
+
+export async function getAuthNinja(): Promise<AuthNinjaContext> {
+  if (!authPromise) {
+    authPromise = (async () => {
+      const config = loadAuthNinjaConfig();
+      const { db, client } = createAuthDb(config.databaseUrl);
+      await runAuthMigrations({ db, client });
+      return createAuthNinjaContext({ config, db });
+    })();
+  }
+  return authPromise;
+}
+```
+
+</details>
+
+<details>
+<summary><strong>Next.js — route handler example (<code>app/auth/login/route.ts</code>)</strong></summary>
+
+```ts
+import { createLoginHandler } from "@auth-ninja/next";
+import { getAuthNinja } from "@/lib/auth-ninja";
+
+export async function POST(request: Request) {
+  const auth = await getAuthNinja();
+  return createLoginHandler(auth)(request);
+}
+```
+
+Repeat for `register`, `logout`, `session`, `csrf`, and optional 2FA / passkey routes. See [`demos/next-fullstack/`](demos/next-fullstack/) for the full route tree.
+
+</details>
+
+<details>
+<summary><strong>Next.js — middleware (CSRF, rate limit, IP audit)</strong></summary>
+
+```ts
+import { createAuthMiddleware } from "@auth-ninja/next";
+import { getAuthNinja } from "@/lib/auth-ninja";
+
+export default async function middleware(request: Request) {
+  const auth = await getAuthNinja();
+  return createAuthMiddleware(auth, { pathPrefix: "/auth" })(request);
+}
+
+export const config = { matcher: ["/auth/:path*"] };
+```
+
+If you already have `middleware.ts`, init writes `middleware.auth-ninja-snippet.ts` to merge manually.
+
+</details>
+
+<details>
+<summary><strong>Next.js — client (<code>AuthProvider</code>)</strong></summary>
+
+```tsx
+"use client";
+
+import { AuthProvider } from "@auth-ninja/react";
+
+export function Providers({ children }: { children: React.ReactNode }) {
+  return (
+    <AuthProvider baseUrl={process.env.NEXT_PUBLIC_AUTH_BASE_URL ?? ""}>
+      {children}
+    </AuthProvider>
+  );
+}
+```
+
+Set `NEXT_PUBLIC_AUTH_BASE_URL` to your app's public origin (e.g. `http://localhost:3000`).
+
+</details>
+
+<details>
+<summary><strong>Vite SPA — <code>vite.config.ts</code> (env validation + dev proxy)</strong></summary>
+
+```ts
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+import { authNinjaViteEnvPlugin } from "@auth-ninja/react/vite";
+
+export default defineConfig({
+  plugins: [authNinjaViteEnvPlugin(), react()],
+  server: {
+    port: 5173,
+    proxy: {
+      "/auth": {
+        target: process.env.AUTH_NINJA_PROXY_TARGET ?? "http://localhost:3000",
+        changeOrigin: true,
+      },
+    },
+  },
+});
+```
+
+Client env (`.env.local`):
+
+```bash
+VITE_AUTH_BASE_URL=http://localhost:5173
+```
+
+</details>
+
+<details>
+<summary><strong>Vite SPA — bootstrap (<code>main.tsx</code>)</strong></summary>
+
+```tsx
+import { AuthProvider, readViteAuthClientConfig } from "@auth-ninja/react";
+
+const authConfig = readViteAuthClientConfig(import.meta.env);
+
+<AuthProvider {...authConfig}>
+  <App />
+</AuthProvider>
+```
+
+In production, reverse-proxy `/auth/*` to your API so cookies stay same-origin with the SPA.
+
+</details>
+
+<details>
+<summary><strong>ASP.NET Core — <code>Program.cs</code></strong></summary>
+
+```csharp
+builder.Services.AddAuthNinja(options => options.BindConfiguration(builder.Configuration));
+app.UseAuthNinja();
+app.MapAuthNinja(); // register, login, logout, session, csrf, 2fa, passkeys
+```
+
+Apply EF Core migrations:
+
+```bash
+export AUTH_NINJA_DATABASE_URL="postgresql://user:pass@localhost:5432/auth_ninja"
+dotnet ef database update --project src/AuthNinja.AspNetCore/AuthNinja.AspNetCore.csproj
+```
+
+</details>
+
+<details>
+<summary><strong>React — minimal login form (any stack)</strong></summary>
 
 ```tsx
 import { useAuth } from "@auth-ninja/react";
@@ -134,7 +435,12 @@ function LoginPage() {
 }
 ```
 
-#### Protected route
+CSRF tokens are fetched automatically before state-changing requests.
+
+</details>
+
+<details>
+<summary><strong>React — protected route</strong></summary>
 
 ```tsx
 import { RequireAuth } from "@auth-ninja/react";
@@ -148,23 +454,30 @@ function Dashboard() {
 }
 ```
 
-CSRF tokens are fetched automatically before state-changing requests (`POST`, `PUT`, `PATCH`, `DELETE`).
+</details>
 
-Stack-specific `AuthProvider` wiring is covered in [Next.js full-stack](#nextjs-full-stack), [Vite SPA + Next.js API](#vite-spa--nextjs-api), and [React SPA client](#react-spa-client).
+---
+
+## Shared concepts
+
+These apply regardless of which backend adapter you choose.
+
+### React hooks
+
+| Hook / component | Purpose |
+|------------------|---------|
+| `AuthProvider` | Session context, idle refresh, cross-tab sync |
+| `useAuth()` | `user`, `login`, `register`, `logout`, `isLoading` |
+| `RequireAuth` | Render children only when authenticated |
+| `useSession()` | Low-level session fetch state |
+| `use2FA()` | TOTP enroll, confirm, verify, disable |
+| `usePasskey()` | WebAuthn register, login, list, delete |
 
 ### Configuration
 
-Copy [`.env.example`](.env.example) to `.env`. Both adapters read the same `AUTH_NINJA_*` variables via `@auth-ninja/core`.
+Both adapters read the same `AUTH_NINJA_*` variables via `@auth-ninja/core`. Full schema: `loadAuthNinjaConfig()` in [`@auth-ninja/core`](packages/core).
 
-#### Required
-
-| Variable | Description |
-|----------|-------------|
-| `AUTH_NINJA_SECRET` | ≥ 32 random characters — `auth-ninja keys generate` |
-| `AUTH_NINJA_BASE_URL` | Public URL of the auth API (e.g. `https://app.example.com`) |
-| `AUTH_NINJA_DATABASE_URL` | PostgreSQL connection string |
-
-#### Sessions & lockout (defaults shown)
+#### Sessions & lockout (defaults)
 
 | Variable | Default | Description |
 |----------|---------|-------------|
@@ -187,8 +500,6 @@ Copy [`.env.example`](.env.example) to `.env`. Both adapters read the same `AUTH
 | `AUTH_NINJA_IP_AUDIT_ENABLED` | `true` | Persist IP audit events |
 | `AUTH_NINJA_REDIS_URL` | — | Redis for multi-instance deployments |
 
-Full schema: `loadAuthNinjaConfig()` in [`@auth-ninja/core`](packages/core).
-
 ### Auth API
 
 All routes are under `/auth`. The [OpenAPI spec](packages/protocol/openapi.json) is the source of truth for both adapters.
@@ -205,22 +516,6 @@ All routes are under `/auth`. The [OpenAPI spec](packages/protocol/openapi.json)
 
 Sessions use an HttpOnly `auth_session` cookie (`Secure`, `SameSite=Strict`). Login rotates any existing session ID.
 
-### Security defaults
-
-Auth-Ninja is **fail-closed** — invalid sessions, CSRF tokens, and rate limits deny access; protected routes never silently fall back to anonymous.
-
-| Area | Default |
-|------|---------|
-| Session storage | HttpOnly cookie — **never** localStorage or sessionStorage |
-| Password hashing | Argon2id |
-| Auth errors | Generic messages — no user enumeration |
-| CSRF | Enabled on state-changing routes |
-| Rate limiting | Per-IP on auth endpoints |
-| Account lockout | Configurable failed-attempt threshold |
-| Session fixation | Session ID regenerated on login |
-
-Report vulnerabilities per [`SECURITY.md`](SECURITY.md). Run `auth-ninja doctor --production --strict` before going live.
-
 ---
 
 ## Next.js
@@ -236,7 +531,6 @@ Use `@auth-ninja/next` when your auth API runs on **Next.js App Router** (full-s
 | **React** | `^18.0.0 \|\| ^19.0.0` | Via `@auth-ninja/react` |
 | **PostgreSQL** | 14+ recommended | Sessions, users, credentials, audit log |
 | **Redis** | Optional locally; **recommended in production** | Distributed rate limiting across instances |
-| **TypeScript** | 5.x | Declarations ship with packages |
 
 Passkeys require a browser with WebAuthn. Session cookies require `SameSite=Strict` support (all modern browsers).
 
@@ -244,173 +538,14 @@ Passkeys require a browser with WebAuthn. Session cookies require `SameSite=Stri
 
 ```bash
 pnpm dlx @auth-ninja/cli init --stack next
-auth-ninja keys generate          # copy into .env as AUTH_NINJA_SECRET
-auth-ninja doctor                 # validate config
-auth-ninja demo                   # local demo → http://localhost:3000
+auth-ninja keys generate
+auth-ninja doctor
+auth-ninja demo
 ```
 
-`auth-ninja init --stack next` scaffolds App Router routes under `app/auth/*`, a shared `lib/auth-ninja.ts`, and middleware. It creates `.env` and `.env.example` (never overwrites an existing `.env`).
+`auth-ninja init --stack next` scaffolds App Router routes under `app/auth/*`, a shared `lib/auth-ninja.ts`, and middleware.
 
-Set `AUTH_NINJA_DATABASE_URL` in `.env`. Migrations run automatically on first request via `runAuthMigrations`.
-
-### Next.js full-stack
-
-Best when UI and auth API live in the **same Next.js app**.
-
-#### Install
-
-```bash
-pnpm add @auth-ninja/core @auth-ninja/next @auth-ninja/react
-```
-
-#### Server — shared context
-
-Create a singleton that loads config, connects to Postgres, and runs migrations once per process:
-
-```ts
-// lib/auth-ninja.ts
-import { loadAuthNinjaConfig } from "@auth-ninja/core";
-import {
-  createAuthDb,
-  createAuthNinjaContext,
-  runAuthMigrations,
-  type AuthNinjaContext,
-} from "@auth-ninja/next";
-
-let authPromise: Promise<AuthNinjaContext> | undefined;
-
-export async function getAuthNinja(): Promise<AuthNinjaContext> {
-  if (!authPromise) {
-    authPromise = (async () => {
-      const config = loadAuthNinjaConfig();
-      const { db, client } = createAuthDb(config.databaseUrl);
-      await runAuthMigrations({ db, client });
-      return createAuthNinjaContext({ config, db });
-    })();
-  }
-  return authPromise;
-}
-```
-
-#### Server — route handlers
-
-Wire App Router routes under `app/auth/*`:
-
-```ts
-// app/auth/register/route.ts
-import { createRegisterHandler } from "@auth-ninja/next";
-import { getAuthNinja } from "@/lib/auth-ninja";
-
-export async function POST(request: Request) {
-  const auth = await getAuthNinja();
-  return createRegisterHandler(auth)(request);
-}
-```
-
-Repeat for `login`, `logout`, `session`, `csrf`, and optional 2FA / passkey routes. See [`demos/next-fullstack/`](demos/next-fullstack/) for the full route tree.
-
-#### Server — API guard
-
-Rate limiting, CSRF validation, and IP audit run before handlers:
-
-```ts
-// middleware.ts
-import { createAuthMiddleware } from "@auth-ninja/next";
-import { getAuthNinja } from "@/lib/auth-ninja";
-
-export default async function middleware(request: Request) {
-  const auth = await getAuthNinja();
-  return createAuthMiddleware(auth, { pathPrefix: "/auth" })(request);
-}
-
-export const config = { matcher: ["/auth/:path*"] };
-```
-
-#### Client — wrap your app
-
-```tsx
-// app/providers.tsx
-"use client";
-
-import { AuthProvider } from "@auth-ninja/react";
-
-export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <AuthProvider baseUrl={process.env.NEXT_PUBLIC_AUTH_BASE_URL ?? ""}>
-      {children}
-    </AuthProvider>
-  );
-}
-```
-
-Set `NEXT_PUBLIC_AUTH_BASE_URL` to your app's public origin (e.g. `http://localhost:3000`) so the client hits `/auth/*` on the same host.
-
-> **Reference:** [`demos/next-fullstack/README.md`](demos/next-fullstack/README.md)
-
-### Vite SPA + Next.js API
-
-Use when the React UI is a **separate Vite app** and the auth API runs on Next.js.
-
-#### Install (SPA)
-
-```bash
-pnpm add @auth-ninja/react
-```
-
-#### Vite config — env validation + dev proxy
-
-The Vite plugin rejects secret-like `VITE_AUTH_*` keys at build time. Proxy `/auth` to your Next.js API so session cookies stay same-origin during development:
-
-```ts
-// vite.config.ts
-import react from "@vitejs/plugin-react";
-import { defineConfig } from "vite";
-import { authNinjaViteEnvPlugin } from "@auth-ninja/react/vite";
-
-export default defineConfig({
-  plugins: [authNinjaViteEnvPlugin(), react()],
-  server: {
-    port: 5173,
-    proxy: {
-      "/auth": {
-        target: process.env.AUTH_NINJA_PROXY_TARGET ?? "http://localhost:3000",
-        changeOrigin: true,
-      },
-    },
-  },
-});
-```
-
-#### Client env (`.env.local`)
-
-```bash
-# Public origin of the SPA — NOT the API host
-VITE_AUTH_BASE_URL=http://localhost:5173
-
-# Optional — match server AUTH_NINJA_SESSION_IDLE_MINUTES
-# VITE_AUTH_SESSION_IDLE_MINUTES=15
-```
-
-#### Bootstrap
-
-```tsx
-// src/main.tsx
-import { AuthProvider, readViteAuthClientConfig } from "@auth-ninja/react";
-
-const authConfig = readViteAuthClientConfig(import.meta.env);
-
-<AuthProvider {...authConfig}>
-  <App />
-</AuthProvider>
-```
-
-Run `@auth-ninja/next` on port 3000 (or your chosen port). In production, put both behind a reverse proxy so `/auth/*` and the SPA share one origin.
-
-> **Reference:** [`demos/vite-react/README.md`](demos/vite-react/README.md)
-
-#### Next.js API backend
-
-Follow [Next.js full-stack](#nextjs-full-stack) for the API side, or run a Next.js app that exposes only `/auth/*` routes without a React UI.
+> **Reference:** [`demos/next-fullstack/README.md`](demos/next-fullstack/README.md) · [`demos/vite-react/README.md`](demos/vite-react/README.md)
 
 ---
 
@@ -427,43 +562,19 @@ Use `AuthNinja.AspNetCore` when your auth API runs on **ASP.NET Core**. The Reac
 | **PostgreSQL** | 14+ recommended | Same schema as the Next.js adapter |
 | **Redis** | Optional locally; **recommended in production** | Distributed rate limiting across instances |
 | **React client** | `^18.0.0 \|\| ^19.0.0` | Via `@auth-ninja/react` in your SPA |
-| **Vite** (optional) | `^5.0.0 \|\| ^6.0.0` | For the env validation plugin in SPAs |
 
 Node.js is **not** required on the server — only if you use the `@auth-ninja/cli` or a Vite-based React frontend.
 
 ### .NET quick start
 
 ```bash
-auth-ninja init --stack dotnet    # scaffolds Program.cs snippet + .env
-auth-ninja keys generate          # copy into api/.env as AUTH_NINJA_SECRET
+auth-ninja init --stack dotnet
+auth-ninja keys generate
 auth-ninja doctor --cwd ./api
-auth-ninja demo --stack dotnet    # local demo → http://localhost:5174
+auth-ninja demo --stack dotnet
 ```
 
-Set `AUTH_NINJA_DATABASE_URL`, then apply EF Core migrations:
-
-```bash
-export AUTH_NINJA_DATABASE_URL="postgresql://postgres:postgres@localhost:5432/auth_ninja"
-dotnet ef database update --project src/AuthNinja.AspNetCore/AuthNinja.AspNetCore.csproj
-```
-
-### ASP.NET Core integration
-
-#### Install
-
-```bash
-dotnet add package AuthNinja.AspNetCore
-```
-
-#### Program.cs
-
-```csharp
-builder.Services.AddAuthNinja(options => options.BindConfiguration(builder.Configuration));
-app.UseAuthNinja();
-app.MapAuthNinja(); // register, login, logout, session, csrf, 2fa, passkeys
-```
-
-#### Database
+### Database schema
 
 EF Core entities mirror the Next.js Drizzle schema:
 
@@ -474,50 +585,7 @@ EF Core entities mirror the Next.js Drizzle schema:
 | `credentials` | WebAuthn passkeys and hashed TOTP backup codes |
 | `audit_events` | Login, logout, lockout, and IP audit rows |
 
-Configuration binds from environment variables or `appsettings.json` using the same `AUTH_NINJA_*` names documented in [Configuration](#configuration).
-
-> **Reference:** [`adapters/dotnet/README.md`](adapters/dotnet/README.md)
-
-### React SPA client
-
-Pair the .NET API with a Vite + React SPA. The client setup is identical to [Vite SPA + Next.js API](#vite-spa--nextjs-api) — only the proxy target changes.
-
-#### Vite dev proxy
-
-```ts
-// vite.config.ts
-server: {
-  port: 5174,
-  proxy: {
-    "/auth": {
-      target: process.env.AUTH_NINJA_PROXY_TARGET ?? "http://localhost:5280",
-      changeOrigin: true,
-    },
-  },
-},
-```
-
-#### Client env (`.env.local`)
-
-```bash
-VITE_AUTH_BASE_URL=http://localhost:5174
-```
-
-#### Bootstrap
-
-```tsx
-import { AuthProvider, readViteAuthClientConfig } from "@auth-ninja/react";
-
-const authConfig = readViteAuthClientConfig(import.meta.env);
-
-<AuthProvider {...authConfig}>
-  <App />
-</AuthProvider>
-```
-
-In production, reverse-proxy `/auth/*` to the .NET API so cookies remain same-origin with the SPA.
-
-> **Reference:** [`demos/dotnet-spa/README.md`](demos/dotnet-spa/README.md)
+> **Reference:** [`adapters/dotnet/README.md`](adapters/dotnet/README.md) · [`demos/dotnet-spa/README.md`](demos/dotnet-spa/README.md)
 
 ---
 
@@ -525,17 +593,10 @@ In production, reverse-proxy `/auth/*` to the .NET API so cookies remain same-or
 
 Throwaway UI lives under [`demos/`](demos/) — **not published** to npm. Use them to explore flows and copy patterns, not components.
 
-### Next.js demos
-
 | Demo | Stack | Port |
 |------|-------|------|
 | [`demos/next-fullstack`](demos/next-fullstack) | Next.js + `@auth-ninja/next` | 3000 |
 | [`demos/vite-react`](demos/vite-react) | Vite SPA + proxied Next.js API | 5173 |
-
-### .NET demos
-
-| Demo | Stack | Port |
-|------|-------|------|
 | [`demos/dotnet-spa`](demos/dotnet-spa) | Vite SPA + `AuthNinja.AspNetCore` | 5174 |
 
 Each demo includes login, register, TOTP 2FA, and passkey pages wired to headless hooks.
@@ -556,9 +617,9 @@ pnpm typecheck
 Release workflow (maintainers):
 
 ```bash
-pnpm changeset          # after user-facing changes
-pnpm version-packages   # bump versions + CHANGELOGs
-pnpm release            # build and publish to npm (OIDC or NPM_TOKEN)
+pnpm changeset
+pnpm version-packages
+pnpm release
 ```
 
 ---
