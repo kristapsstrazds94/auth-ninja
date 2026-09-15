@@ -21,13 +21,21 @@ const PUBLISHABLE_PACKAGES = [
   { name: "@auth-ninja/cli", dir: "packages/cli", files: ["dist", "README.md"] },
 ] as const;
 
-const RELEASE_VERSION = "1.0.0";
-
 function readJson(path: string): Record<string, unknown> {
   return JSON.parse(readFileSync(path, "utf8")) as Record<string, unknown>;
 }
 
+/** Fixed group versions together — @auth-ninja/core is the source of truth. */
+const RELEASE_VERSION = readJson(join(repoRoot, "packages/core/package.json")).version as string;
+
 describe("release readiness (task 7.3)", () => {
+  it("all publishable packages share the same version", () => {
+    for (const { dir } of PUBLISHABLE_PACKAGES) {
+      const pkg = readJson(join(repoRoot, dir, "package.json"));
+      expect(pkg.version).toBe(RELEASE_VERSION);
+    }
+  });
+
   it("has changesets config with fixed publishable group", () => {
     const configPath = join(repoRoot, ".changeset/config.json");
     expect(existsSync(configPath)).toBe(true);
