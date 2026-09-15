@@ -1,47 +1,53 @@
 #!/usr/bin/env node
 
-import { parseDemoArgs, runDemo } from "./commands/demo.js";
 import { runDoctorCli, type DoctorOptions } from "./commands/doctor.js";
-import { runInit } from "./commands/init.js";
+import { runMigrateCli } from "./commands/migrate.js";
 import { runKeysGenerate } from "./commands/keys.js";
-import type { AuthStack } from "./detect-stack.js";
+import { runSetup, type SetupOptions } from "./commands/setup.js";
+import type { FullStack } from "./detect-stack.js";
 
 const args = process.argv.slice(2);
 const command = args[0] ?? "help";
+const subcommand = args[1];
 
 const HELP = `
-auth-ninja — secure authentication toolkit
+auth-ninja — secure full-stack authentication
 
 Usage:
-  auth-ninja init [--stack next|vite|dotnet] [--cwd <path>] [--dry-run]
-  auth-ninja doctor [--cwd <path>] [--production] [--strict]
-  auth-ninja demo [--stack next|vite|dotnet] [--cwd <path>]
-  auth-ninja keys generate     Output a secure AUTH_NINJA_SECRET
+  pnpm dlx @auth-ninja/cli setup [--stack next|dotnet] [--cwd <path>]
+  pnpm dlx @auth-ninja/cli db migrate [--cwd <path>]
+  pnpm dlx @auth-ninja/cli doctor [--cwd <path>] [--production] [--strict]
+  pnpm dlx @auth-ninja/cli keys generate
 
-Run auth-ninja init in your app root to scaffold .env and wire adapters.
+setup installs packages, creates .env, migrates PostgreSQL, and validates config.
+Application code is never modified — copy integration steps from the README.
 `.trim();
 
-function parseInitArgs(argv: string[]): {
-  cwd?: string;
-  stack?: AuthStack;
-  dryRun?: boolean;
-} {
-  const options: { cwd?: string; stack?: AuthStack; dryRun?: boolean } = {};
+function parseCwd(argv: string[]): string | undefined {
+  for (let index = 0; index < argv.length; index += 1) {
+    if (argv[index] === "--cwd") {
+      return argv[index + 1];
+    }
+  }
+  return undefined;
+}
+
+function parseSetupArgs(argv: string[]): SetupOptions {
+  const options: SetupOptions = { cwd: parseCwd(argv) };
 
   for (let index = 0; index < argv.length; index += 1) {
     const arg = argv[index];
-    if (arg === "--dry-run") {
-      options.dryRun = true;
+    if (arg === "--skip-install") {
+      options.skipInstall = true;
       continue;
     }
-    if (arg === "--cwd") {
-      options.cwd = argv[index + 1];
-      index += 1;
+    if (arg === "--skip-migrate") {
+      options.skipMigrate = true;
       continue;
     }
     if (arg === "--stack") {
-      const value = argv[index + 1] as AuthStack | undefined;
-      if (value === "next" || value === "vite" || value === "dotnet" || value === "unknown") {
+      const value = argv[index + 1] as FullStack | undefined;
+      if (value === "next" || value === "dotnet") {
         options.stack = value;
       }
       index += 1;
@@ -52,22 +58,14 @@ function parseInitArgs(argv: string[]): {
 }
 
 function parseDoctorArgs(argv: string[]): DoctorOptions {
-  const options: DoctorOptions = {};
+  const options: DoctorOptions = { cwd: parseCwd(argv) };
 
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (arg === "--cwd") {
-      options.cwd = argv[index + 1];
-      index += 1;
-      continue;
-    }
+  for (const arg of argv) {
     if (arg === "--production") {
       options.production = true;
-      continue;
     }
     if (arg === "--strict") {
       options.strict = true;
-      continue;
     }
   }
 
@@ -81,24 +79,33 @@ async function main(): Promise<void> {
     case "-h":
       console.log(HELP);
       break;
+    case "setup":
+      await runSetup(parseSetupArgs(args.slice(1)));
+      break;
     case "init":
-      await runInit(parseInitArgs(args.slice(1)));
+      console.warn("auth-ninja init is deprecated — use: pnpm dlx @auth-ninja/cli setup\n");
+      await runSetup(parseSetupArgs(args.slice(1)));
+      break;
+    case "db":
+      if (subcommand === "migrate") {
+        const exitCode = await runMigrateCli({ cwd: parseCwd(args.slice(2)) });
+        process.exit(exitCode);
+      }
+      console.error(`Unknown db subcommand: ${subcommand ?? "(none)"}\n`);
+      console.log(HELP);
+      process.exit(1);
       break;
     case "doctor": {
       const exitCode = await runDoctorCli(parseDoctorArgs(args.slice(1)));
       process.exit(exitCode);
       break;
     }
-    case "demo":
-      await runDemo(parseDemoArgs(args.slice(1)));
-      break;
     case "keys": {
-      const subcommand = args[1] ?? "generate";
       if (subcommand === "generate") {
         runKeysGenerate();
         break;
       }
-      console.error(`Unknown keys subcommand: ${subcommand}\n`);
+      console.error(`Unknown keys subcommand: ${subcommand ?? "(none)"}\n`);
       console.log(HELP);
       process.exit(1);
       break;

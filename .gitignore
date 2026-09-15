@@ -11,6 +11,7 @@ dist/
 .env
 .env.*
 !.env.example
+!demos/**/.env.development
 
 # AI agent docs (local only — not on GitHub or npm)
 .cursor/

@@ -14,7 +14,7 @@ import { persistAuditEvent } from "../audit/persist.js";
 import type { AuthNinjaContext } from "../context.js";
 import { credentials, users } from "../db/schema.js";
 import { verifyLoginChallengeToken } from "./login-token.js";
-import { toSessionResponse } from "./user-response.js";
+import { toSessionResponse, type SessionResponse } from "./user-response.js";
 import type {
   Disable2faRequest,
   PasswordConfirmRequest,
@@ -51,7 +51,7 @@ export type ConfirmTwoFaResult = ConfirmTwoFaSuccess | ConfirmTwoFaFailure;
 
 export type VerifyTwoFaLoginSuccess = {
   status: 200;
-  body: ReturnType<typeof toSessionResponse>;
+  body: SessionResponse;
   session: CreatedSession;
 };
 
@@ -342,7 +342,7 @@ export async function verifyTwoFaLogin(
 
   return {
     status: 200,
-    body: toSessionResponse(user, ctx.config),
+    body: await toSessionResponse(user, ctx.db),
     session,
   };
 }

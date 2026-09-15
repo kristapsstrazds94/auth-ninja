@@ -157,7 +157,7 @@ internal sealed class TwoFaService
 
         await _audit.PersistLoginAsync("success", ipAddress, userAgent, user.Id, now, cancellationToken);
 
-        return (ToSessionResponse(user), session);
+        return (await SessionResponseFactory.CreateAsync(_db, user, cancellationToken), session);
     }
 
     public async Task<BackupCodesResponse> RegenerateBackupCodesAsync(
@@ -247,18 +247,6 @@ internal sealed class TwoFaService
         user.UpdatedAt = now;
         await _db.SaveChangesAsync(cancellationToken);
     }
-
-    private SessionResponse ToSessionResponse(User user) =>
-        new()
-        {
-            User = new UserDto
-            {
-                Id = user.Id.ToString(),
-                Email = user.Email,
-                MfaEnabled = user.MfaEnabled,
-                PasskeysEnabled = _options.PasskeysEnabled,
-            },
-        };
 
     private async Task DeleteBackupCodesAsync(Guid userId, CancellationToken cancellationToken)
     {

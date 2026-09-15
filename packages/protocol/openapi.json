@@ -735,8 +735,14 @@
         "properties": {
           "id": { "type": "string", "format": "uuid" },
           "email": { "type": "string", "format": "email" },
-          "mfaEnabled": { "type": "boolean" },
-          "passkeysEnabled": { "type": "boolean" }
+          "mfaEnabled": {
+            "type": "boolean",
+            "description": "Whether TOTP two-factor authentication is enabled for this user."
+          },
+          "passkeysEnabled": {
+            "type": "boolean",
+            "description": "Whether this user has at least one registered WebAuthn passkey."
+          }
         }
       },
       "SessionResponse": {

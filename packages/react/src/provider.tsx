@@ -59,19 +59,36 @@ export function AuthProvider({
   sessionSync = true,
   sessionCheckOnMount = true,
 }: AuthProviderProps) {
+  const [pendingRequests, setPendingRequests] = useState(0);
+
+  const onRequestStart = useCallback(() => {
+    setPendingRequests((count) => count + 1);
+  }, []);
+
+  const onRequestEnd = useCallback(() => {
+    setPendingRequests((count) => Math.max(0, count - 1));
+  }, []);
+
   const client = useMemo(
-    () => createAuthClient({ baseUrl, fetchFn }),
-    [baseUrl, fetchFn],
+    () =>
+      createAuthClient({
+        baseUrl,
+        fetchFn,
+        onRequestStart,
+        onRequestEnd,
+      }),
+    [baseUrl, fetchFn, onRequestStart, onRequestEnd],
   );
 
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const isApiLoading = pendingRequests > 0;
   const [sessionError, setSessionError] = useState<Error | null>(null);
   const sessionSyncRef = useRef<ReturnType<typeof createSessionSync> | null>(null);
 
-  const refreshSession = useCallback(async (): Promise<SessionResponse | null> => {
+  const refreshSession = useCallback(async (options?: { blocking?: boolean }): Promise<SessionResponse | null> => {
     try {
-      const session = await fetchSession(client);
+      const session = await fetchSession(client, options);
       setUser(session?.user ?? null);
       setSessionError(null);
       return session;
@@ -113,7 +130,7 @@ export function AuthProvider({
     if (!sessionSync) return;
 
     const sync = createSessionSync(() => {
-      void refreshSession();
+      void refreshSession({ blocking: false });
     });
     sessionSyncRef.current = sync;
 
@@ -143,7 +160,7 @@ export function AuthProvider({
     const controller = createIdleRefreshController({
       idleMinutes: sessionIdleMinutes,
       onRefresh: () => {
-        void refreshSession();
+        void refreshSession({ blocking: false });
       },
     });
 
@@ -188,6 +205,7 @@ export function AuthProvider({
       user,
       isAuthenticated: user !== null,
       isLoading,
+      isApiLoading,
       sessionError,
       login,
       logout,
@@ -200,6 +218,7 @@ export function AuthProvider({
       baseUrl,
       user,
       isLoading,
+      isApiLoading,
       sessionError,
       login,
       logout,

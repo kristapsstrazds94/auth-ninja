@@ -20,6 +20,9 @@ importers:
 
   demos/dotnet-spa:
     dependencies:
+      '@auth-ninja/core':
+        specifier: workspace:*
+        version: link:../../packages/core
       '@auth-ninja/react':
         specifier: workspace:*
         version: link:../../packages/react
@@ -32,6 +35,9 @@ importers:
       react-dom:
         specifier: ^19.0.0
         version: 19.3.0(react@19.3.0)
+      react-qr-code:
+        specifier: ^2.2.0
+        version: 2.2.0(react@19.3.0)
       react-router-dom:
         specifier: ^7.1.1
         version: 7.18.3(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
@@ -182,6 +188,9 @@ importers:
       '@auth-ninja/core':
         specifier: workspace:*
         version: link:../core
+      '@auth-ninja/next':
+        specifier: workspace:*
+        version: link:../next
       pg:
         specifier: ^8.13.1
         version: 8.23.0

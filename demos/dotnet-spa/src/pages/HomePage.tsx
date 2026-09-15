@@ -1,42 +1,105 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "@auth-ninja/react";
+import { DemoConsoleCard } from "../components/DemoConsoleCard";
+
+function userInitial(email: string): string {
+  return email.charAt(0).toUpperCase();
+}
 
 export function HomePage() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <p className="muted">Checking session…</p>;
-  }
+  const { user, isAuthenticated } = useAuth();
 
   if (!isAuthenticated || !user) {
     return (
-      <div className="card stack">
-        <h1>Auth-Ninja .NET SPA demo</h1>
-        <p className="muted">
-          React SPA with Auth-Ninja on ASP.NET Core — not published. Use the headless
-          hooks in your own app.
-        </p>
-        <div className="row">
-          <Link to="/register">Create account</Link>
-          <Link to="/login">Log in</Link>
+      <DemoConsoleCard>
+        <header className="demo-console-header">
+          <h1>Auth-Ninja demo</h1>
+          <p>
+            A full-stack reference app for testing secure authentication flows. Wire up the
+            headless hooks in your own product UI.
+          </p>
+        </header>
+
+        <div className="hero-actions">
+          <Link to="/register" className="btn">
+            Create account
+          </Link>
+          <Link to="/login" className="btn btn-secondary">
+            Log in
+          </Link>
         </div>
-      </div>
+
+        <div className="dashboard-grid">
+          <div className="stat-card">
+            <p className="stat-card-title">Password + session auth</p>
+            <p className="stat-card-desc">
+              HttpOnly cookies, CSRF protection, and generic error responses.
+            </p>
+          </div>
+          <div className="stat-card">
+            <p className="stat-card-title">MFA & passkeys</p>
+            <p className="stat-card-desc">
+              TOTP enrollment with backup codes and WebAuthn credential management.
+            </p>
+          </div>
+        </div>
+      </DemoConsoleCard>
     );
   }
 
   return (
-    <div className="card stack">
-      <h1>Signed in</h1>
-      <p>
-        <strong>{user.email}</strong>
-      </p>
-      <ul className="muted">
-        <li>MFA: {user.mfaEnabled ? "enabled" : "off"}</li>
-        <li>Passkeys: {user.passkeysEnabled ? "registered" : "none"}</li>
-      </ul>
-      <div className="row">
-        <Link to="/2fa">Manage 2FA</Link>
-        <Link to="/passkeys">Manage passkeys</Link>
+    <div className="stack">
+      <DemoConsoleCard>
+        <header className="demo-console-header">
+          <h1>Signed in</h1>
+          <p>Your session is active. Manage security settings from the dashboard below.</p>
+        </header>
+
+        <div className="user-banner">
+          <span className="user-avatar" aria-hidden="true">
+            {userInitial(user.email)}
+          </span>
+          <div>
+            <p className="user-email">{user.email}</p>
+            <p className="user-meta">Authenticated via Auth-Ninja session cookie</p>
+          </div>
+        </div>
+      </DemoConsoleCard>
+
+      <div className="dashboard-grid demo-console-grid">
+        <div className="stat-card">
+          <div className="stat-card-header">
+            <p className="stat-card-title">Two-factor authentication</p>
+            <span className={`badge ${user.mfaEnabled ? "badge-success" : "badge-muted"}`}>
+              {user.mfaEnabled ? "Enabled" : "Off"}
+            </span>
+          </div>
+          <p className="stat-card-desc">
+            {user.mfaEnabled
+              ? "Your account requires a TOTP code at sign-in."
+              : "Add an authenticator app for an extra layer of protection."}
+          </p>
+          <Link to="/2fa" className="btn btn-secondary">
+            {user.mfaEnabled ? "Manage 2FA" : "Set up 2FA"}
+          </Link>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-card-header">
+            <p className="stat-card-title">Passkeys</p>
+            <span className={`badge ${user.passkeysEnabled ? "badge-success" : "badge-muted"}`}>
+              {user.passkeysEnabled ? "Registered" : "None"}
+            </span>
+          </div>
+          <p className="stat-card-desc">
+            {user.passkeysEnabled
+              ? "You can sign in with a registered WebAuthn credential."
+              : "Register a passkey for passwordless sign-in."}
+          </p>
+          <Link to="/passkeys" className="btn btn-secondary">
+            {user.passkeysEnabled ? "Manage passkeys" : "Add passkey"}
+          </Link>
+        </div>
       </div>
     </div>
   );

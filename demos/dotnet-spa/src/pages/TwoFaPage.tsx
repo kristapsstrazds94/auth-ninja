@@ -1,6 +1,9 @@
 import { FormEvent, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth, use2FA } from "@auth-ninja/react";
-import { Protected } from "../components/Layout";
+import { DemoConsoleCard } from "../components/DemoConsoleCard";
+import { Protected } from "../components/Protected";
+import { QrCodeDisplay } from "../components/QrCodeDisplay";
 import { formatAuthError } from "../lib/auth-error";
 
 export function TwoFaPage() {
@@ -80,94 +83,129 @@ function TwoFaContent() {
   const mfaEnabled = user?.mfaEnabled === true;
 
   return (
-    <div className="card stack">
-      <h1>Two-factor authentication</h1>
-      <p className="muted">
-        Status: <strong>{mfaEnabled ? "enabled" : "disabled"}</strong>
-      </p>
+    <DemoConsoleCard chromeTitle="auth-ninja.demo / 2fa">
+      <header className="demo-console-header">
+        <h1>Two-factor authentication</h1>
+        <p>
+          Protect your account with time-based one-time passwords from an authenticator app.
+        </p>
+      </header>
+
+      <div className="stat-card">
+        <div className="stat-card-header">
+          <p className="stat-card-title">Current status</p>
+          <span className={`badge ${mfaEnabled ? "badge-success" : "badge-muted"}`}>
+            {mfaEnabled ? "Enabled" : "Disabled"}
+          </span>
+        </div>
+        <p className="stat-card-desc">
+          {mfaEnabled
+            ? "A valid TOTP code is required when signing in."
+            : "2FA is not active on this account yet."}
+        </p>
+      </div>
 
       {!mfaEnabled && !secret ? (
-        <button type="button" disabled={busy} onClick={() => void handleEnroll()}>
-          {busy ? "Starting enrollment…" : "Enroll TOTP"}
-        </button>
+        <div className="demo-console-actions">
+          <button type="button" className="btn" disabled={busy} onClick={() => void handleEnroll()}>
+            {busy ? "Starting enrollment…" : "Enroll TOTP"}
+          </button>
+        </div>
       ) : null}
 
-      {secret ? (
-        <div className="stack">
+      {secret && otpauthUrl ? (
+        <section className="demo-console-section stack">
           <p className="muted">
-            Add this secret to your authenticator app, then enter a code to confirm.
+            Scan the QR code below with Google Authenticator, 1Password, or another TOTP app,
+            then enter the 6-digit code to finish setup.
           </p>
-          <code>{secret}</code>
-          {otpauthUrl ? (
-            <a href={otpauthUrl} target="_blank" rel="noreferrer">
-              Open otpauth URL
-            </a>
-          ) : null}
-          <form onSubmit={(event) => void handleConfirm(event)}>
+
+          <QrCodeDisplay value={otpauthUrl} />
+
+          <details className="secret-fallback">
+            <summary>Can&apos;t scan? Enter the secret manually</summary>
+            <code>{secret}</code>
+          </details>
+
+          <form className="demo-console-form" onSubmit={(event) => void handleConfirm(event)}>
             <label>
               Confirmation code
               <input
                 type="text"
                 inputMode="numeric"
+                autoComplete="one-time-code"
                 pattern="[0-9]{6}"
                 maxLength={6}
+                placeholder="000000"
                 value={confirmCode}
                 onChange={(event) => setConfirmCode(event.target.value)}
                 required
               />
             </label>
-            <button type="submit" disabled={busy}>
+            <button type="submit" className="btn" disabled={busy}>
               {busy ? "Confirming…" : "Confirm enrollment"}
             </button>
           </form>
-        </div>
+        </section>
       ) : null}
 
       {backupCodes ? (
-        <div className="stack">
-          <p className="muted">Save these backup codes — they are shown once.</p>
-          <ul>
+        <section className="demo-console-section stack">
+          <p className="muted">
+            Save these backup codes in a secure place — they are shown only once and can be used
+            if you lose access to your authenticator.
+          </p>
+          <ul className="backup-codes">
             {backupCodes.map((code) => (
               <li key={code}>
                 <code>{code}</code>
               </li>
             ))}
           </ul>
-        </div>
+        </section>
       ) : null}
 
       {mfaEnabled ? (
-        <form className="stack" onSubmit={(event) => void handleDisable(event)}>
-          <h2>Disable 2FA</h2>
-          <label>
-            Password
-            <input
-              type="password"
-              autoComplete="current-password"
-              value={disablePassword}
-              onChange={(event) => setDisablePassword(event.target.value)}
-              required
-            />
-          </label>
-          <label>
-            TOTP code
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]{6}"
-              maxLength={6}
-              value={disableCode}
-              onChange={(event) => setDisableCode(event.target.value)}
-              required
-            />
-          </label>
-          <button type="submit" className="secondary" disabled={busy}>
-            {busy ? "Disabling…" : "Disable 2FA"}
-          </button>
-        </form>
+        <section className="demo-console-section stack">
+          <h2 className="demo-console-section-title">Disable 2FA</h2>
+          <p className="muted">Confirm your password and current TOTP code to turn off MFA.</p>
+          <form className="demo-console-form" onSubmit={(event) => void handleDisable(event)}>
+            <label>
+              Password
+              <input
+                type="password"
+                autoComplete="current-password"
+                value={disablePassword}
+                onChange={(event) => setDisablePassword(event.target.value)}
+                required
+              />
+            </label>
+            <label>
+              TOTP code
+              <input
+                type="text"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                pattern="[0-9]{6}"
+                maxLength={6}
+                placeholder="000000"
+                value={disableCode}
+                onChange={(event) => setDisableCode(event.target.value)}
+                required
+              />
+            </label>
+            <button type="submit" className="btn btn-danger" disabled={busy}>
+              {busy ? "Disabling…" : "Disable 2FA"}
+            </button>
+          </form>
+        </section>
       ) : null}
 
       {error ? <p className="error">{error}</p> : null}
-    </div>
+
+      <p className="demo-console-footer-link muted">
+        <Link to="/">Back to dashboard</Link>
+      </p>
+    </DemoConsoleCard>
   );
 }

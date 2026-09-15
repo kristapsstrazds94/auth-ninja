@@ -5,6 +5,7 @@ export type AuthUser = {
   id: string;
   email: string;
   mfaEnabled?: boolean;
+  /** True when the user has at least one registered WebAuthn passkey. */
   passkeysEnabled?: boolean;
 };
 
@@ -38,9 +39,19 @@ export function isMfaRequiredResponse(result: LoginResult): result is MfaRequire
   return "mfaRequired" in result && result.mfaRequired === true;
 }
 
-export async function fetchSession(client: AuthClient): Promise<SessionResponse | null> {
+export type FetchSessionOptions = {
+  /** When false, skip global loading indicators. Default `true`. */
+  blocking?: boolean;
+};
+
+export async function fetchSession(
+  client: AuthClient,
+  options: FetchSessionOptions = {},
+): Promise<SessionResponse | null> {
   try {
-    return await client.requestJson<SessionResponse>("/auth/session");
+    return await client.requestJson<SessionResponse>("/auth/session", {
+      blocking: options.blocking ?? true,
+    });
   } catch (error) {
     if (error instanceof AuthNinjaError && error.code === "SESSION_EXPIRED") {
       return null;

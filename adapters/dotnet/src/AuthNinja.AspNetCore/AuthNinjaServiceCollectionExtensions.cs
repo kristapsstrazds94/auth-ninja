@@ -5,6 +5,7 @@ using AuthNinja.AspNetCore.Data;
 using AuthNinja.AspNetCore.Data.Enums;
 using AuthNinja.AspNetCore.Middleware;
 using Fido2NetLib;
+using Microsoft.AspNetCore.Cors.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -37,6 +38,10 @@ public static class AuthNinjaServiceCollectionExtensions
         services.TryAddEnumerable(
             ServiceDescriptor.Singleton<IValidateOptions<AuthNinjaOptions>, AuthNinjaOptionsValidator>());
 
+        services.AddCors();
+        services.TryAddEnumerable(
+            ServiceDescriptor.Singleton<IConfigureOptions<CorsOptions>, ConfigureAuthNinjaCorsOptions>());
+
         services.AddDbContext<AuthNinjaDbContext>((sp, dbOptions) =>
         {
             var authOptions = sp.GetRequiredService<IOptions<AuthNinjaOptions>>().Value;
@@ -45,7 +50,8 @@ public static class AuthNinjaServiceCollectionExtensions
                 throw new InvalidOperationException("AUTH_NINJA_DATABASE_URL is required for AuthNinjaDbContext.");
             }
 
-            dbOptions.UseNpgsql(authOptions.DatabaseUrl, npgsql =>
+            var connectionString = PostgreSqlConnectionString.Normalize(authOptions.DatabaseUrl);
+            dbOptions.UseNpgsql(connectionString, npgsql =>
             {
                 npgsql.MigrationsAssembly(typeof(AuthNinjaDbContext).Assembly.GetName().Name);
                 npgsql.MapEnum<AuditEventType>("audit_event_type");

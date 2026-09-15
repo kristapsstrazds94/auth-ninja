@@ -78,7 +78,7 @@ internal sealed class AuthService
         var session = await _sessions.CreateAsync(user.Id, ipAddress, userAgent, now, cancellationToken);
         await _audit.PersistLoginAsync("success", ipAddress, userAgent, user.Id, now, cancellationToken);
 
-        return (ToSessionResponse(user), session);
+        return (await SessionResponseFactory.CreateAsync(_db, user, cancellationToken), session);
     }
 
     public async Task<LoginResult> LoginAsync(
@@ -158,7 +158,9 @@ internal sealed class AuthService
             cancellationToken);
 
         await _audit.PersistLoginAsync("success", ipAddress, userAgent, user.Id, now, cancellationToken);
-        return LoginResult.Success(ToSessionResponse(user), session);
+        return LoginResult.Success(
+            await SessionResponseFactory.CreateAsync(_db, user, cancellationToken),
+            session);
     }
 
     public async Task<SessionResponse> GetSessionAsync(
@@ -168,7 +170,7 @@ internal sealed class AuthService
     {
         var (session, user) = await _sessions.ResolveAsync(token, now, cancellationToken);
         await _sessions.TouchAsync(session.Id, now, cancellationToken);
-        return ToSessionResponse(user);
+        return await SessionResponseFactory.CreateAsync(_db, user, cancellationToken);
     }
 
     public async Task LogoutAsync(
@@ -185,18 +187,6 @@ internal sealed class AuthService
 
     public CsrfResponse GetCsrfToken(DateTimeOffset now) =>
         new() { Token = CsrfToken.Generate(_options.Secret!, now) };
-
-    private SessionResponse ToSessionResponse(User user) =>
-        new()
-        {
-            User = new UserDto
-            {
-                Id = user.Id.ToString(),
-                Email = user.Email,
-                MfaEnabled = user.MfaEnabled,
-                PasskeysEnabled = _options.PasskeysEnabled,
-            },
-        };
 
     private static void ValidateRegisterRequest(RegisterRequest request, int passwordMinScore)
     {

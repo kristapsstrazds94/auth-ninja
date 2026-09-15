@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useLayoutEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -98,6 +98,7 @@ function PasskeyLoginPanel() {
 function PasskeyManagePanel() {
   const passkey = usePasskey();
   const [items, setItems] = useState<PasskeyCredential[]>([]);
+  const [listReady, setListReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -106,11 +107,29 @@ function PasskeyManagePanel() {
     setItems(result.passkeys);
   }, [passkey]);
 
-  useEffect(() => {
-    void refresh().catch((cause: unknown) => {
-      setError(formatAuthError(cause));
-    });
+  useLayoutEffect(() => {
+    let cancelled = false;
+
+    void refresh()
+      .catch((cause: unknown) => {
+        if (!cancelled) {
+          setError(formatAuthError(cause));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setListReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [refresh]);
+
+  if (!listReady) {
+    return null;
+  }
 
   async function handleRegister() {
     setError(null);

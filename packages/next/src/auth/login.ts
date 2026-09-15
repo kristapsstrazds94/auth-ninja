@@ -10,7 +10,7 @@ import type { AuthNinjaContext } from "../context.js";
 import { users } from "../db/schema.js";
 import { createLoginChallengeToken } from "./login-token.js";
 import { normalizeEmail } from "./email.js";
-import { toSessionResponse } from "./user-response.js";
+import { toSessionResponse, type SessionResponse } from "./user-response.js";
 import type { LoginRequest } from "./validation.js";
 import type { CreatedSession } from "../session/service.js";
 import { rotateSession } from "../session/service.js";
@@ -33,7 +33,7 @@ export type LoginMfaRequired = {
 export type LoginSuccess = {
   status: 200;
   mfaRequired: false;
-  body: ReturnType<typeof toSessionResponse>;
+  body: SessionResponse;
   session: CreatedSession;
 };
 
@@ -157,7 +157,7 @@ export async function loginUser(
   return {
     status: 200,
     mfaRequired: false,
-    body: toSessionResponse(user, ctx.config),
+    body: await toSessionResponse(user, ctx.db),
     session,
   };
 }

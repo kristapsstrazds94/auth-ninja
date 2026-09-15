@@ -17,7 +17,7 @@ import { WEBAUTHN_CHALLENGE_TTL_MS } from "../session/constants.js";
 import type { CreatedSession } from "../session/service.js";
 import { resolveSessionByToken, rotateSession } from "../session/service.js";
 import { normalizeEmail } from "./email.js";
-import { toSessionResponse } from "./user-response.js";
+import { toSessionResponse, type SessionResponse } from "./user-response.js";
 import {
   uuidToUserHandle,
   webAuthnOrigin,
@@ -65,7 +65,7 @@ export type PasskeyLoginBeginResult = PasskeyLoginBeginSuccess | PasskeyLoginBeg
 
 export type PasskeyLoginFinishSuccess = {
   status: 200;
-  body: ReturnType<typeof toSessionResponse>;
+  body: SessionResponse;
   session: CreatedSession;
 };
 
@@ -456,7 +456,7 @@ export async function passkeyLoginFinish(
 
   return {
     status: 200,
-    body: toSessionResponse(user, ctx.config),
+    body: await toSessionResponse(user, ctx.db),
     session,
   };
 }

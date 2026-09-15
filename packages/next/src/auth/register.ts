@@ -12,7 +12,7 @@ import { users } from "../db/schema.js";
 import type { CreatedSession } from "../session/service.js";
 import { createSession } from "../session/service.js";
 import { normalizeEmail } from "./email.js";
-import { toSessionResponse } from "./user-response.js";
+import { toSessionResponse, type SessionResponse } from "./user-response.js";
 import type { RegisterRequest } from "./validation.js";
 
 export type RegisterInput = RegisterRequest & {
@@ -22,7 +22,7 @@ export type RegisterInput = RegisterRequest & {
 
 export type RegisterSuccess = {
   status: 201;
-  body: ReturnType<typeof toSessionResponse>;
+  body: SessionResponse;
   session: CreatedSession;
 };
 
@@ -104,7 +104,7 @@ export async function registerUser(
 
   return {
     status: 201,
-    body: toSessionResponse(user, ctx.config),
+    body: await toSessionResponse(user, ctx.db),
     session,
   };
 }

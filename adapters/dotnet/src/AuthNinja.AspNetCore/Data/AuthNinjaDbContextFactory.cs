@@ -9,8 +9,9 @@ public sealed class AuthNinjaDbContextFactory : IDesignTimeDbContextFactory<Auth
 {
     public AuthNinjaDbContext CreateDbContext(string[] args)
     {
-        var connectionString = Environment.GetEnvironmentVariable("AUTH_NINJA_DATABASE_URL")
+        var raw = Environment.GetEnvironmentVariable("AUTH_NINJA_DATABASE_URL")
             ?? "Host=localhost;Database=auth_ninja;Username=postgres;Password=postgres";
+        var connectionString = PostgreSqlConnectionString.Normalize(raw);
 
         var optionsBuilder = new DbContextOptionsBuilder<AuthNinjaDbContext>();
         optionsBuilder.UseNpgsql(connectionString, npgsql =>

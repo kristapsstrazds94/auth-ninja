@@ -1,11 +1,14 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { useCallback, useLayoutEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import {
   type PasskeyCredential,
   useAuth,
   usePasskey,
 } from "@auth-ninja/react";
-import { Protected } from "../components/Layout";
+import { AuthDemoCard } from "../components/AuthDemoCard";
+import { AuthPageShell } from "../components/AuthPageShell";
+import { DemoConsoleCard } from "../components/DemoConsoleCard";
+import { Protected } from "../components/Protected";
 import { formatAuthError } from "../lib/auth-error";
 import {
   performPasskeyAuthentication,
@@ -13,11 +16,7 @@ import {
 } from "../lib/webauthn";
 
 export function PasskeysPage() {
-  const { isAuthenticated, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <p className="muted">Checking session…</p>;
-  }
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return <PasskeyLoginPanel />;
@@ -32,6 +31,7 @@ export function PasskeysPage() {
 
 function PasskeyLoginPanel() {
   const passkey = usePasskey();
+  const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -46,7 +46,7 @@ function PasskeyLoginPanel() {
       );
       const response = await performPasskeyAuthentication(options);
       await passkey.loginFinish(response);
-      window.location.assign("/");
+      navigate("/");
     } catch (cause) {
       setError(formatAuthError(cause));
     } finally {
@@ -55,34 +55,47 @@ function PasskeyLoginPanel() {
   }
 
   return (
-    <div className="card stack">
-      <h1>Passkey login</h1>
-      <p className="muted">
-        Sign in with a registered passkey. Email is optional for discoverable credentials.
-      </p>
-      <label>
-        Email (optional)
-        <input
-          type="email"
-          autoComplete="username"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-        />
-      </label>
-      {error ? <p className="error">{error}</p> : null}
-      <button type="button" disabled={busy} onClick={() => void handlePasskeyLogin()}>
-        {busy ? "Waiting for passkey…" : "Sign in with passkey"}
-      </button>
-      <p className="muted">
-        Prefer password login? <Link to="/login">Log in</Link>
-      </p>
-    </div>
+    <AuthPageShell showLogo={false}>
+      <AuthDemoCard
+        title="Passkeys"
+        footer={
+          <p className="muted auth-demo-footer">
+            Prefer password login? <Link to="/login">Log in</Link>
+          </p>
+        }
+      >
+        <div className="auth-demo-form stack">
+          <label>
+            Email (optional)
+            <input
+              type="email"
+              autoComplete="username"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+            />
+          </label>
+          {error ? <p className="error">{error}</p> : null}
+          <div className="btn-group">
+            <button
+              type="button"
+              className="btn btn-block"
+              disabled={busy}
+              onClick={() => void handlePasskeyLogin()}
+            >
+              {busy ? "Waiting for passkey…" : "Sign in with passkey"}
+            </button>
+          </div>
+        </div>
+      </AuthDemoCard>
+    </AuthPageShell>
   );
 }
 
 function PasskeyManagePanel() {
   const passkey = usePasskey();
   const [items, setItems] = useState<PasskeyCredential[]>([]);
+  const [listReady, setListReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -91,11 +104,29 @@ function PasskeyManagePanel() {
     setItems(result.passkeys);
   }, [passkey]);
 
-  useEffect(() => {
-    void refresh().catch((cause: unknown) => {
-      setError(formatAuthError(cause));
-    });
+  useLayoutEffect(() => {
+    let cancelled = false;
+
+    void refresh()
+      .catch((cause: unknown) => {
+        if (!cancelled) {
+          setError(formatAuthError(cause));
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setListReady(true);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [refresh]);
+
+  if (!listReady) {
+    return null;
+  }
 
   async function handleRegister() {
     setError(null);
@@ -128,22 +159,38 @@ function PasskeyManagePanel() {
   }
 
   return (
-    <div className="card stack">
-      <h1>Passkeys</h1>
-      <button type="button" disabled={busy} onClick={() => void handleRegister()}>
-        {busy ? "Waiting for passkey…" : "Register passkey"}
-      </button>
+    <DemoConsoleCard chromeTitle="auth-ninja.demo / passkeys">
+      <header className="demo-console-header">
+        <h1>Passkeys</h1>
+        <p>Register WebAuthn credentials for passwordless sign-in on supported devices.</p>
+      </header>
+
+      <div className="demo-console-actions row">
+        <button type="button" className="btn" disabled={busy} onClick={() => void handleRegister()}>
+          {busy ? "Waiting for passkey…" : "Register passkey"}
+        </button>
+        <span className={`badge ${items.length > 0 ? "badge-success" : "badge-muted"}`}>
+          {items.length > 0 ? `${items.length} registered` : "None registered"}
+        </span>
+      </div>
+
       {items.length === 0 ? (
-        <p className="muted">No passkeys registered yet.</p>
+        <div className="stat-card">
+          <p className="stat-card-title">No passkeys yet</p>
+          <p className="stat-card-desc">
+            Click &quot;Register passkey&quot; to add your first credential. You can remove
+            credentials at any time.
+          </p>
+        </div>
       ) : (
-        <ul>
+        <ul className="credential-list">
           {items.map((item) => (
-            <li key={item.credentialId} className="row">
+            <li key={item.credentialId} className="credential-item">
               <code>{item.credentialId}</code>
               <span className="muted">{new Date(item.createdAt).toLocaleString()}</span>
               <button
                 type="button"
-                className="secondary"
+                className="btn btn-secondary"
                 disabled={busy}
                 onClick={() => void handleRemove(item.credentialId)}
               >
@@ -153,7 +200,12 @@ function PasskeyManagePanel() {
           ))}
         </ul>
       )}
+
       {error ? <p className="error">{error}</p> : null}
-    </div>
+
+      <p className="demo-console-footer-link muted">
+        <Link to="/">Back to dashboard</Link>
+      </p>
+    </DemoConsoleCard>
   );
 }

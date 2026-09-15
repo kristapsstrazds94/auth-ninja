@@ -19,11 +19,20 @@ export type AuthClientOptions = {
   fetchFn?: typeof fetch;
   /** Attach CSRF header on state-changing requests. Default `true`. */
   csrfEnabled?: boolean;
+  /** Called when a blocking auth HTTP request starts. */
+  onRequestStart?: () => void;
+  /** Called when a blocking auth HTTP request finishes (success or error). */
+  onRequestEnd?: () => void;
 };
 
 export type AuthRequestOptions = Omit<RequestInit, "body"> & {
   /** JSON-serializable request body; sets `Content-Type: application/json`. */
   json?: unknown;
+  /**
+   * When false, skip `onRequestStart` / `onRequestEnd` (e.g. background session keepalive).
+   * Default `true`.
+   */
+  blocking?: boolean;
 };
 
 export type AuthClient = {
@@ -77,14 +86,14 @@ function resolvePath(path: string): string {
 
 export function createAuthClient(options: AuthClientOptions): AuthClient {
   const baseUrl = normalizeBaseUrl(options.baseUrl);
-  const fetchFn = options.fetchFn ?? fetch.bind(globalThis);
+  const rawFetchFn = options.fetchFn ?? fetch.bind(globalThis);
   const csrfEnabled = options.csrfEnabled ?? true;
 
   let csrfToken: string | null = null;
   let csrfFetchPromise: Promise<string> | null = null;
 
   async function fetchCsrfToken(): Promise<string> {
-    const response = await fetchFn(`${baseUrl}${AUTH_CSRF_PATH}`, {
+    const response = await rawFetchFn(`${baseUrl}${AUTH_CSRF_PATH}`, {
       method: "GET",
       credentials: "include",
     });
@@ -123,10 +132,11 @@ export function createAuthClient(options: AuthClientOptions): AuthClient {
   async function buildInit(
     options: AuthRequestOptions = {},
   ): Promise<{ init: RequestInit; method: string }> {
-    const method = (options.method ?? "GET").toUpperCase();
-    const headers = new Headers(options.headers);
+    const { json, blocking: _blocking, ...rest } = options;
+    const method = (rest.method ?? "GET").toUpperCase();
+    const headers = new Headers(rest.headers);
 
-    if (options.json !== undefined) {
+    if (json !== undefined) {
       if (!headers.has("Content-Type")) {
         headers.set("Content-Type", "application/json");
       }
@@ -138,11 +148,11 @@ export function createAuthClient(options: AuthClientOptions): AuthClient {
     }
 
     const init: RequestInit = {
-      ...options,
+      ...rest,
       method,
       headers,
       credentials: "include",
-      body: options.json !== undefined ? JSON.stringify(options.json) : undefined,
+      body: json !== undefined ? JSON.stringify(json) : undefined,
     };
 
     return { init, method };
@@ -150,34 +160,46 @@ export function createAuthClient(options: AuthClientOptions): AuthClient {
 
   async function request(
     path: string,
-    options: AuthRequestOptions = {},
+    requestOptions: AuthRequestOptions = {},
     retryOnCsrfInvalid = true,
   ): Promise<Response> {
-    const { init } = await buildInit(options);
-    const response = await fetchFn(`${baseUrl}${resolvePath(path)}`, init);
+    const blocking = requestOptions.blocking ?? true;
 
-    if (
-      csrfEnabled &&
-      retryOnCsrfInvalid &&
-      response.status === 403 &&
-      isStateChangingMethod(init.method ?? "GET")
-    ) {
-      const body = await response.clone().json().catch(() => null);
-      const error = parseAuthErrorResponse(response.status, body);
-      if (error.code === "CSRF_INVALID") {
-        clearCsrfToken();
-        return request(path, options, false);
-      }
+    if (blocking) {
+      options.onRequestStart?.();
     }
 
-    return response;
+    try {
+      const { init } = await buildInit(requestOptions);
+      const response = await rawFetchFn(`${baseUrl}${resolvePath(path)}`, init);
+
+      if (
+        csrfEnabled &&
+        retryOnCsrfInvalid &&
+        response.status === 403 &&
+        isStateChangingMethod(init.method ?? "GET")
+      ) {
+        const body = await response.clone().json().catch(() => null);
+        const error = parseAuthErrorResponse(response.status, body);
+        if (error.code === "CSRF_INVALID") {
+          clearCsrfToken();
+          return request(path, requestOptions, false);
+        }
+      }
+
+      return response;
+    } finally {
+      if (blocking) {
+        options.onRequestEnd?.();
+      }
+    }
   }
 
   async function requestJson<T>(
     path: string,
-    options: AuthRequestOptions = {},
+    requestOptions: AuthRequestOptions = {},
   ): Promise<T> {
-    const response = await request(path, options);
+    const response = await request(path, requestOptions);
 
     if (!response.ok) {
       const body = await response.json().catch(() => null);

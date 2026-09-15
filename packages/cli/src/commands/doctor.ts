@@ -207,14 +207,14 @@ function validationFailureCheck(message: string): DoctorCheck {
       return {
         id: "secret",
         status: "fail",
-        message: "AUTH_NINJA_SECRET is not set — run: auth-ninja keys generate",
+        message: "AUTH_NINJA_SECRET is not set — run: pnpm dlx @auth-ninja/cli setup",
       };
     }
     return {
       id: "secret",
       status: "fail",
       message:
-        "AUTH_NINJA_SECRET is too weak — use at least 32 random characters (auth-ninja keys generate)",
+        "AUTH_NINJA_SECRET is too weak — run: pnpm dlx @auth-ninja/cli keys generate",
     };
   }
 

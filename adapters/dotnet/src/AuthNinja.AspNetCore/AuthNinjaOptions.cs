@@ -41,6 +41,9 @@ public sealed class AuthNinjaOptions
 
     public string? RedisUrl { get; set; }
 
+    /// <summary>Allowed browser origins for cross-origin SPA + API dev (comma-separated env).</summary>
+    public string[]? CorsOrigins { get; set; }
+
     /// <summary>Minimum password strength score (0–4). Default 2.</summary>
     public int PasswordMinScore { get; set; } = 2;
 }

@@ -11,7 +11,7 @@ import { AuthProvider } from "@auth-ninja/react";
 import { HomePage } from "./HomePage";
 import { LoginPage } from "./LoginPage";
 
-const BASE_URL = "http://localhost:5174";
+const BASE_URL = "";
 const CSRF_TOKEN = "csrf-token-32-chars-minimum!!";
 
 function asFetchMock(
@@ -34,6 +34,7 @@ function renderApp(fetchFn: typeof fetch) {
       createElement(AuthProvider, {
         baseUrl: BASE_URL,
         fetchFn,
+        sessionCheckOnMount: false,
         children: createElement(
           MemoryRouter,
           {

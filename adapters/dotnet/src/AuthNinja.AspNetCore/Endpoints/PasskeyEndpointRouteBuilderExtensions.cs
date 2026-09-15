@@ -1,3 +1,4 @@
+using System.Text.Json;
 using AuthNinja.AspNetCore.Auth;
 using AuthNinja.AspNetCore.Auth.Models;
 using AuthNinja.AspNetCore.Auth.Services;
@@ -65,12 +66,13 @@ internal static class PasskeyEndpointRouteBuilderExtensions
     }
 
     private static async Task<IResult> LoginBeginAsync(
-        PasskeyLoginBeginRequest request,
+        HttpContext context,
         PasskeyService passkeys,
         CancellationToken cancellationToken)
     {
         try
         {
+            var request = await ReadLoginBeginRequestAsync(context, cancellationToken);
             var body = await passkeys.LoginBeginAsync(request, DateTimeOffset.UtcNow, cancellationToken);
             return AuthHttpResults.Json(body, StatusCodes.Status200OK);
         }
@@ -78,6 +80,23 @@ internal static class PasskeyEndpointRouteBuilderExtensions
         {
             return AuthHttpResults.Error(ex);
         }
+        catch (JsonException)
+        {
+            return AuthHttpResults.Error(AuthErrors.Create(AuthErrorCode.ValidationError));
+        }
+    }
+
+    private static async Task<PasskeyLoginBeginRequest> ReadLoginBeginRequestAsync(
+        HttpContext context,
+        CancellationToken cancellationToken)
+    {
+        if (context.Request.ContentLength is null or 0)
+        {
+            return new PasskeyLoginBeginRequest();
+        }
+
+        return await context.Request.ReadFromJsonAsync<PasskeyLoginBeginRequest>(cancellationToken)
+            ?? new PasskeyLoginBeginRequest();
     }
 
     private static async Task<IResult> LoginFinishAsync(

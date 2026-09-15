@@ -31,9 +31,13 @@ describe("validateViteAuthEnv", () => {
     expect(env.VITE_AUTH_SESSION_SYNC).toBe(true);
   });
 
-  it("requires VITE_AUTH_BASE_URL", () => {
-    expect(() => validateViteAuthEnv({})).toThrow(ViteAuthEnvValidationError);
-    expect(() => validateViteAuthEnv({})).toThrow(/VITE_AUTH_BASE_URL is required/);
+  it("defaults to same-origin when VITE_AUTH_BASE_URL is unset", () => {
+    const env = validateViteAuthEnv({});
+    expect(env.VITE_AUTH_BASE_URL).toBe("");
+    expect(readViteAuthClientConfig({})).toEqual({
+      baseUrl: "",
+      sessionIdleMinutes: 15,
+    });
   });
 
   it("rejects invalid base URLs", () => {
@@ -112,11 +116,14 @@ describe("readViteAuthClientConfig", () => {
 });
 
 describe("authNinjaViteEnvPlugin", () => {
-  it("throws during config when env is invalid", () => {
+  it("allows same-origin config when base URL is unset", () => {
     const plugin = authNinjaViteEnvPlugin({ env: {} });
-    expect(() =>
-      plugin.config?.({}, { mode: "test", command: "build" } as never),
-    ).toThrow(/VITE_AUTH_BASE_URL is required/);
+    const result = plugin.config?.({}, { mode: "test", command: "build" } as never);
+    expect(result).toEqual({
+      define: {
+        "import.meta.env.VITE_AUTH_BASE_URL": '""',
+      },
+    });
   });
 
   it("passes config when env is valid", () => {
@@ -124,5 +131,16 @@ describe("authNinjaViteEnvPlugin", () => {
     expect(() =>
       plugin.config?.({}, { mode: "test", command: "build" } as never),
     ).not.toThrow();
+  });
+
+  it("injects validated env into import.meta.env defines", () => {
+    const plugin = authNinjaViteEnvPlugin({ env: VALID_ENV });
+    const result = plugin.config?.({}, { mode: "test", command: "build" } as never);
+
+    expect(result).toEqual({
+      define: {
+        "import.meta.env.VITE_AUTH_BASE_URL": JSON.stringify(VALID_ENV.VITE_AUTH_BASE_URL),
+      },
+    });
   });
 });

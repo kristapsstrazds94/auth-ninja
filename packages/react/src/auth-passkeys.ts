@@ -49,7 +49,7 @@ export async function passkeyLoginBegin(
 ): Promise<WebAuthnOptionsResponse> {
   return client.requestJson<WebAuthnOptionsResponse>("/auth/passkeys/login/begin", {
     method: "POST",
-    json: Object.keys(input).length > 0 ? input : undefined,
+    json: input.email ? { email: input.email } : {},
   });
 }
 

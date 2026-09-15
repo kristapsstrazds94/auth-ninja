@@ -7,7 +7,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: ["./src/test/setup.ts"],
     env: {
-      VITE_AUTH_BASE_URL: "http://localhost:5174",
+      VITE_AUTH_BASE_URL: "",
     },
   },
 });

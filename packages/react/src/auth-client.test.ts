@@ -162,4 +162,42 @@ describe("createAuthClient", () => {
     const [, init] = getFetchCall(fetchFn, 0);
     expect(new Headers(init?.headers).has(AUTH_CSRF_HEADER)).toBe(false);
   });
+
+  it("notifies request lifecycle hooks for blocking requests", async () => {
+    const fetchFn = vi.fn(async () => Response.json({ token: "csrf-token-1" }));
+    const onRequestStart = vi.fn();
+    const onRequestEnd = vi.fn();
+
+    const client = createAuthClient({
+      baseUrl: "https://auth.example",
+      fetchFn,
+      onRequestStart,
+      onRequestEnd,
+    });
+
+    await client.requestJson("/auth/session");
+
+    expect(onRequestStart).toHaveBeenCalledTimes(1);
+    expect(onRequestEnd).toHaveBeenCalledTimes(1);
+  });
+
+  it("skips request lifecycle hooks when blocking is false", async () => {
+    const fetchFn = vi.fn(async () =>
+      Response.json({ authenticated: true, user: { id: "1", email: "a@test.local" } }),
+    );
+    const onRequestStart = vi.fn();
+    const onRequestEnd = vi.fn();
+
+    const client = createAuthClient({
+      baseUrl: "https://auth.example",
+      fetchFn,
+      onRequestStart,
+      onRequestEnd,
+    });
+
+    await client.requestJson("/auth/session", { blocking: false });
+
+    expect(onRequestStart).not.toHaveBeenCalled();
+    expect(onRequestEnd).not.toHaveBeenCalled();
+  });
 });

@@ -2,15 +2,32 @@
 
 Throwaway UI for manual and E2E testing. **Not published to npm.**
 
-| Demo | Stack | Task |
+| Demo | Stack | Port |
 |------|-------|------|
-| `vite-react/` | Vite + React SPA | 6.1 |
-| `next-fullstack/` | Next.js full-stack | 6.2 |
-| `dotnet-spa/` | React SPA + .NET API | 6.3 |
-| `e2e/` | Playwright vs Next demo | 6.4 |
+| `next-fullstack/` | React + Next.js | 3000 |
+| `dotnet-spa/` | React (Vite) + .NET API | 5174 |
+| `e2e/` | Playwright vs Next demo | — |
 
-Start with `pnpm dlx auth-ninja demo` once task 6.5 is done.
+## Run locally (monorepo contributors)
 
-E2E: copy `demos/e2e/.env.example` to `demos/e2e/.env`, then `pnpm --filter @auth-ninja/demo-e2e test`. If your Postgres URL fails, the runner auto-starts Docker Compose (dynamic port). Stuck port/container: `pnpm --filter @auth-ninja/demo-e2e postgres:down` then retry.
+```bash
+pnpm install
+pnpm build
+pnpm demo              # React + Next.js → http://localhost:3000
+pnpm demo:dotnet       # React + .NET → http://localhost:5174 (API on :5280)
+```
 
-Consumers install headless packages only — copy patterns from demos, not the demo UI itself.
+Each demo uses its own Postgres database on the shared E2E server (`auth_ninja_e2e_next` vs `auth_ninja_e2e_dotnet`) so Drizzle and EF Core migrations never conflict. You can run `pnpm demo` and `pnpm demo:dotnet` in any order.
+
+If a demo fails after a previous run, free its ports / stop stale processes and retry:
+
+```bash
+pnpm --filter @auth-ninja/demo-e2e postgres:down   # optional — reset all demo databases
+pnpm demo:dotnet
+```
+
+The demo runner auto-stops processes still listening on demo ports before starting.
+
+E2E: copy `demos/e2e/.env.example` to `demos/e2e/.env`, then `pnpm --filter @auth-ninja/demo-e2e test`.
+
+Consumers install headless packages only — copy **patterns** from demos via the [README integration guide](../README.md#integrate), not the demo UI itself.

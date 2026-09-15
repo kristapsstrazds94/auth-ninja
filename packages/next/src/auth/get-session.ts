@@ -1,10 +1,10 @@
 import type { AuthNinjaContext } from "../context.js";
 import { resolveSessionByToken, touchSession } from "../session/service.js";
-import { toSessionResponse } from "./user-response.js";
+import { toSessionResponse, type SessionResponse } from "./user-response.js";
 
 export type GetSessionSuccess = {
   status: 200;
-  body: ReturnType<typeof toSessionResponse>;
+  body: SessionResponse;
 };
 
 /** Read the current session; refresh idle timer on success. */
@@ -18,6 +18,6 @@ export async function getSessionUser(
 
   return {
     status: 200,
-    body: toSessionResponse(resolved.user, ctx.config),
+    body: await toSessionResponse(resolved.user, ctx.db),
   };
 }

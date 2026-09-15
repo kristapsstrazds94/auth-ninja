@@ -10,16 +10,18 @@ import { isAuthLayoutPath, isCenteredAuthPath } from "@/lib/auth-routes";
 
 export function DemoShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { isLoading, sessionError, refreshSession, isAuthenticated } = useAuth();
+  const { isLoading, isApiLoading, sessionError, refreshSession, isAuthenticated } = useAuth();
   const [retrying, setRetrying] = useState(false);
 
-  const pending = isLoading || retrying;
   const hideNav = isAuthLayoutPath(pathname);
   const centeredAuth =
     isCenteredAuthPath(pathname) ||
     (pathname.startsWith("/passkeys") && !isAuthenticated);
   /** Login/register do not need a session check before first paint. */
   const skipSessionGate = isCenteredAuthPath(pathname);
+
+  const showLoader =
+    retrying || isApiLoading || (isLoading && !skipSessionGate);
 
   async function handleRetry() {
     setRetrying(true);
@@ -30,14 +32,6 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
     } finally {
       setRetrying(false);
     }
-  }
-
-  if (pending && !skipSessionGate) {
-    return (
-      <div className="app-shell-loading">
-        <Spinner label="Loading session…" size="lg" centered />
-      </div>
-    );
   }
 
   if (sessionError && !skipSessionGate) {
@@ -57,8 +51,19 @@ export function DemoShell({ children }: { children: React.ReactNode }) {
 
   return (
     <>
-      {hideNav ? null : <DemoNav />}
-      <main className={centeredAuth ? "main-auth" : undefined}>{children}</main>
+      {showLoader ? (
+        <div className="app-shell-loading app-shell-loading-overlay">
+          <Spinner
+            label="Loading…"
+            size="lg"
+            centered
+          />
+        </div>
+      ) : null}
+      <div className={showLoader ? "app-shell-content app-shell-content-pending" : "app-shell-content"}>
+        {hideNav ? null : <DemoNav />}
+        <main className={centeredAuth ? "main-auth" : undefined}>{children}</main>
+      </div>
     </>
   );
 }

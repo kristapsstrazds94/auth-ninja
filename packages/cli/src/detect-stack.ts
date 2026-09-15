@@ -2,14 +2,15 @@ import { existsSync, readdirSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export type AuthStack = "next" | "vite" | "dotnet" | "unknown";
+/** Supported full-stack integrations only. */
+export type FullStack = "next" | "dotnet";
+
+export type AuthStack = FullStack | "unknown";
 
 export type DetectStackResult = {
   stack: AuthStack;
   /** True when package.json lists `next`. */
   hasNext: boolean;
-  /** True when package.json lists `vite`. */
-  hasVite: boolean;
   /** True when a `.csproj` file exists under cwd (depth ≤ 2). */
   hasDotnet: boolean;
 };
@@ -64,25 +65,22 @@ function findCsproj(cwd: string): boolean {
     return true;
   }
 
-  return directoryHasCsproj(cwd) || directoryHasCsproj(join(cwd, "src"));
+  return directoryHasCsproj(cwd) || directoryHasCsproj(join(cwd, "src")) || directoryHasCsproj(join(cwd, "api"));
 }
 
-/** Detect the primary Auth-Ninja integration stack for a consumer project. */
+/** Detect the primary Auth-Ninja full-stack for a consumer project. */
 export async function detectStack(cwd: string): Promise<DetectStackResult> {
   const packageJson = await readPackageJson(cwd);
   const deps = packageJson ? dependencyNames(packageJson) : new Set<string>();
   const hasNext = deps.has("next");
-  const hasVite = deps.has("vite");
   const hasDotnet = findCsproj(cwd);
 
   let stack: AuthStack = "unknown";
   if (hasNext) {
     stack = "next";
-  } else if (hasVite) {
-    stack = "vite";
   } else if (hasDotnet) {
     stack = "dotnet";
   }
 
-  return { stack, hasNext, hasVite, hasDotnet };
+  return { stack, hasNext, hasDotnet };
 }

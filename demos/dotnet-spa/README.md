@@ -5,8 +5,8 @@ React SPA (Vite) with Auth-Ninja API on ASP.NET Core. **Not published.**
 ## Setup
 
 1. Start PostgreSQL and create a database (e.g. `auth_ninja`).
-2. Copy `api/.env.example` to `api/.env` and set `AUTH_NINJA_SECRET` (`auth-ninja keys generate`) and `AUTH_NINJA_DATABASE_URL`.
-3. Copy `.env.example` to `.env.local` (SPA client config).
+2. Copy `api/.env.example` to `api/.env` and set `AUTH_NINJA_SECRET` and `AUTH_NINJA_DATABASE_URL` when not using `pnpm demo:dotnet`.
+3. SPA client config: `.env.development` is committed with `VITE_AUTH_BASE_URL=http://localhost:5174` (override via `.env.local` if needed).
 4. From the repo root:
 
 ```bash

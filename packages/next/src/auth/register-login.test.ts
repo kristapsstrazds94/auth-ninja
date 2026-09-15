@@ -86,6 +86,7 @@ describe("registerUser", () => {
 
     expect(result.body.authenticated).toBe(true);
     expect(result.body.user.email).toBe("new@test.local");
+    expect(result.body.user.passkeysEnabled).toBe(false);
     expect(result.session.token.length).toBeGreaterThan(20);
 
     const stored = await db.select().from(users);

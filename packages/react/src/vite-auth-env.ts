@@ -28,7 +28,11 @@ const boolEnvSchema = z
   .transform((value) => value === "true" || value === "1" || value === "yes");
 
 export const viteAuthEnvSchema = z.object({
-  VITE_AUTH_BASE_URL: z.string().url("VITE_AUTH_BASE_URL must be a valid URL"),
+  /** Empty string = same-origin (use with a Vite `/auth` dev proxy). */
+  VITE_AUTH_BASE_URL: z.union([
+    z.literal(""),
+    z.string().url("VITE_AUTH_BASE_URL must be a valid URL"),
+  ]),
   VITE_AUTH_SESSION_IDLE_MINUTES: z.coerce
     .number()
     .int()
@@ -98,20 +102,18 @@ export function collectViteAuthEnv(
 
 /**
  * Validate `VITE_AUTH_*` variables. Throws {@link ViteAuthEnvValidationError} when invalid.
- * Requires `VITE_AUTH_BASE_URL`.
+ * When `VITE_AUTH_BASE_URL` is unset, uses same-origin relative `/auth` requests (Vite proxy).
  */
 export function validateViteAuthEnv(
   env: Record<string, string | undefined>,
 ): ViteAuthEnv {
   const collected = collectViteAuthEnv(env);
+  const withDefaults = {
+    VITE_AUTH_BASE_URL: collected.VITE_AUTH_BASE_URL ?? "",
+    ...collected,
+  };
 
-  if (!collected.VITE_AUTH_BASE_URL) {
-    throw new ViteAuthEnvValidationError(
-      "VITE_AUTH_BASE_URL is required — set the auth API origin for your Vite app.",
-    );
-  }
-
-  const parsed = viteAuthEnvSchema.safeParse(collected);
+  const parsed = viteAuthEnvSchema.safeParse(withDefaults);
   if (!parsed.success) {
     const detail = parsed.error.errors.map((issue) => issue.message).join("; ");
     throw new ViteAuthEnvValidationError(detail);

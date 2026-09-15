@@ -89,9 +89,11 @@ public sealed class PasskeyEndpointTests : IAsyncLifetime
             "/auth/passkeys/login/begin",
             new { email = "missing@test.local" });
         var discoverable = await PostJsonWithCsrfAsync(client, "/auth/passkeys/login/begin", new { });
+        var withoutBody = await PostJsonWithCsrfAsync(client, "/auth/passkeys/login/begin", null);
 
         Assert.Equal(HttpStatusCode.OK, unknown.StatusCode);
         Assert.Equal(HttpStatusCode.OK, discoverable.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, withoutBody.StatusCode);
     }
 
     [Fact]

@@ -313,7 +313,7 @@ internal sealed class PasskeyService
 
         await _audit.PersistLoginAsync("success", ipAddress, userAgent, user.Id, now, cancellationToken);
 
-        return (ToSessionResponse(user), session);
+        return (await SessionResponseFactory.CreateAsync(_db, user, cancellationToken), session);
     }
 
     public async Task<PasskeyListResponse> ListAsync(
@@ -379,18 +379,6 @@ internal sealed class PasskeyService
             throw AuthErrors.Create(AuthErrorCode.Forbidden);
         }
     }
-
-    private SessionResponse ToSessionResponse(User user) =>
-        new()
-        {
-            User = new UserDto
-            {
-                Id = user.Id.ToString(),
-                Email = user.Email,
-                MfaEnabled = user.MfaEnabled,
-                PasskeysEnabled = _options.PasskeysEnabled,
-            },
-        };
 
     private async Task<List<PublicKeyCredentialDescriptor>> LoadDescriptorsAsync(
         Guid userId,

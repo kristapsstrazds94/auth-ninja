@@ -1,10 +1,10 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { isMfaRequiredResponse, useAuth, usePasskey } from "@auth-ninja/react";
+import { AuthDemoCard } from "../components/AuthDemoCard";
+import { AuthPageShell } from "../components/AuthPageShell";
 import { formatAuthError } from "../lib/auth-error";
-import {
-  performPasskeyAuthentication,
-} from "../lib/webauthn";
+import { performPasskeyAuthentication } from "../lib/webauthn";
 
 export function LoginPage() {
   const { login } = useAuth();
@@ -24,7 +24,9 @@ export function LoginPage() {
     try {
       const result = await login({ email, password });
       if (isMfaRequiredResponse(result)) {
-        navigate("/2fa/verify", { state: { loginToken: result.loginToken } });
+        navigate(
+          `/2fa/verify?loginToken=${encodeURIComponent(result.loginToken)}`,
+        );
         return;
       }
       navigate("/");
@@ -54,47 +56,55 @@ export function LoginPage() {
   }
 
   return (
-    <div className="card stack">
-      <h1>Log in</h1>
-      <form onSubmit={(event) => void handleSubmit(event)}>
-        <label>
-          Email
-          <input
-            type="email"
-            autoComplete="username"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            required
-          />
-        </label>
-        <label>
-          Password
-          <input
-            type="password"
-            autoComplete="current-password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            required
-          />
-        </label>
-        {error ? <p className="error">{error}</p> : null}
-        <div className="row">
-          <button type="submit" disabled={busy}>
-            {busy ? "Signing in…" : "Sign in"}
-          </button>
-          <button
-            type="button"
-            className="secondary"
-            disabled={busy}
-            onClick={() => void handlePasskeyLogin()}
-          >
-            Sign in with passkey
-          </button>
-        </div>
-      </form>
-      <p className="muted">
-        No account? <Link to="/register">Register</Link>
-      </p>
-    </div>
+    <AuthPageShell showLogo={false}>
+      <AuthDemoCard
+        title="Login"
+        footer={
+          <p className="muted auth-demo-footer">
+            No account yet? <Link to="/register">Create one</Link>
+          </p>
+        }
+      >
+        <form className="auth-demo-form" onSubmit={(event) => void handleSubmit(event)}>
+          <label>
+            Email address
+            <input
+              type="email"
+              autoComplete="username"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+          </label>
+          <label>
+            Password
+            <input
+              type="password"
+              autoComplete="current-password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
+          {error ? <p className="error">{error}</p> : null}
+          <div className="btn-group">
+            <button type="submit" className="btn btn-block" disabled={busy}>
+              {busy ? "Signing in…" : "Sign in"}
+            </button>
+            <div className="divider-text">or</div>
+            <button
+              type="button"
+              className="btn btn-secondary btn-block"
+              disabled={busy}
+              onClick={() => void handlePasskeyLogin()}
+            >
+              {busy ? "Waiting for passkey…" : "Sign in with passkey"}
+            </button>
+          </div>
+        </form>
+      </AuthDemoCard>
+    </AuthPageShell>
   );
 }

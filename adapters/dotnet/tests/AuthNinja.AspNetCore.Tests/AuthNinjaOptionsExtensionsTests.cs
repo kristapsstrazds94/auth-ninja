@@ -28,4 +28,19 @@ public sealed class AuthNinjaOptionsExtensionsTests
         Assert.True(options.Require2Fa);
         Assert.Equal(50, options.ApiRateLimitPerMinute);
     }
+
+    [Fact]
+    public void BindConfiguration_MapsCorsOrigins()
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["AUTH_NINJA_CORS_ORIGINS"] = "http://localhost:5174,http://127.0.0.1:5174",
+            })
+            .Build();
+
+        var options = new AuthNinjaOptions().BindConfiguration(configuration);
+
+        Assert.Equal(["http://localhost:5174", "http://127.0.0.1:5174"], options.CorsOrigins);
+    }
 }

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:api": "dotnet run --project api/DemoApi.csproj",
+    "dev:api": "dotnet run --project api/DemoApi.csproj --no-build",
     "build": "tsc -b",
     "build:app": "vite build",
     "build:api": "dotnet build api/DemoApi.csproj",
@@ -15,10 +15,12 @@
     "lint": "node -e \"process.exit(0)\""
   },
   "dependencies": {
+    "@auth-ninja/core": "workspace:*",
     "@auth-ninja/react": "workspace:*",
     "@simplewebauthn/browser": "^11.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "react-qr-code": "^2.2.0",
     "react-router-dom": "^7.1.1"
   },
   "devDependencies": {

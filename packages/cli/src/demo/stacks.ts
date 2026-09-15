@@ -13,7 +13,10 @@ export type DemoStackPlan = {
   stack: DemoStack;
   processes: DemoProcess[];
   urls: string[];
+  /** Public auth API URL as seen by the browser (cookies, CSRF). */
   serverBaseUrl: string;
+  /** Direct API listen URL for health checks (may differ from serverBaseUrl). */
+  apiHealthUrl?: string;
 };
 
 /** Default demo secret — test fixture only, never use in production. */
@@ -22,11 +25,13 @@ export const DEMO_SECRET = "test-secret-min-32-chars-long-!!";
 export function buildDemoServerEnv(options: {
   databaseUrl: string;
   baseUrl: string;
+  corsOrigins?: string;
 }): Record<string, string> {
   return {
     AUTH_NINJA_SECRET: DEMO_SECRET,
     AUTH_NINJA_BASE_URL: options.baseUrl,
     AUTH_NINJA_DATABASE_URL: options.databaseUrl,
+    ...(options.corsOrigins ? { AUTH_NINJA_CORS_ORIGINS: options.corsOrigins } : {}),
     AUTH_NINJA_SESSION_IDLE_MINUTES: "15",
     AUTH_NINJA_SESSION_ABSOLUTE_HOURS: "8",
     AUTH_NINJA_LOCKOUT_MAX_ATTEMPTS: "5",
@@ -84,6 +89,7 @@ export function resolveDemoPlan(stack: DemoStack): DemoStackPlan {
       return {
         stack,
         serverBaseUrl: "http://localhost:5174",
+        apiHealthUrl: "http://localhost:5280",
         urls: ["http://localhost:5174"],
         processes: [
           {

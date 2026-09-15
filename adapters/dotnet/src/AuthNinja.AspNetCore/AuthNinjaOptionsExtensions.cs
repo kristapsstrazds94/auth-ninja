@@ -90,6 +90,13 @@ public static class AuthNinjaOptionsExtensions
 
         options.RedisUrl = ReadString(configuration, "AUTH_NINJA_REDIS_URL") ?? options.RedisUrl;
 
+        var corsOrigins = ReadString(configuration, "AUTH_NINJA_CORS_ORIGINS");
+        if (corsOrigins is not null)
+        {
+            options.CorsOrigins = corsOrigins
+                .Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        }
+
         return options;
     }
 

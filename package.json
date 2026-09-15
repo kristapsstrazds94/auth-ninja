@@ -9,6 +9,8 @@
     "typecheck": "turbo run typecheck",
     "lint": "turbo run lint",
     "clean": "turbo run clean",
+    "demo": "node scripts/run-demo.mjs next",
+    "demo:dotnet": "node scripts/run-demo.mjs dotnet",
     "semgrep:scan": "node scripts/semgrep-scan.mjs",
     "semgrep:test": "node scripts/semgrep-test.mjs",
     "changeset": "changeset",

@@ -78,6 +78,7 @@ describe("useAuth", () => {
     await renderProvider(fetchFn);
 
     expect(auth.isLoading).toBe(false);
+    expect(auth.isApiLoading).toBe(false);
     expect(auth.isAuthenticated).toBe(true);
     expect(auth.user).toEqual({ id: "user-1", email: "a@test.local" });
     expect(fetchFn).toHaveBeenCalledWith(
@@ -197,6 +198,83 @@ describe("useAuth", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("does not set isApiLoading for idle session refresh", async () => {
+    let resolveSession: ((value: Response) => void) | undefined;
+    const sessionPromise = new Promise<Response>((resolve) => {
+      resolveSession = resolve;
+    });
+
+    const fetchFn = vi.fn(
+      asFetchMock(async (input) => {
+        const url = String(input);
+        if (url.endsWith("/auth/session")) {
+          return sessionPromise;
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+
+    await act(async () => {
+      root.render(
+        createElement(
+          AuthProvider,
+          {
+            baseUrl: BASE_URL,
+            fetchFn,
+            sessionIdleRefresh: true,
+            sessionIdleMinutes: 15,
+          },
+          createElement(Probe),
+        ),
+      );
+    });
+
+    await act(async () => {
+      resolveSession!(
+        Response.json({
+          authenticated: true,
+          user: { id: "user-1", email: "a@test.local" },
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    expect(auth.isLoading).toBe(false);
+    expect(auth.isApiLoading).toBe(false);
+
+    const idleSessionPromise = new Promise<Response>((resolve) => {
+      resolveSession = resolve;
+    });
+    fetchFn.mockImplementationOnce(
+      asFetchMock(async (input) => {
+        const url = String(input);
+        if (url.endsWith("/auth/session")) {
+          return idleSessionPromise;
+        }
+        return new Response(null, { status: 404 });
+      }),
+    );
+
+    await act(async () => {
+      window.dispatchEvent(new MouseEvent("mousedown"));
+      await Promise.resolve();
+    });
+
+    expect(auth.isApiLoading).toBe(false);
+
+    await act(async () => {
+      resolveSession!(
+        Response.json({
+          authenticated: true,
+          user: { id: "user-1", email: "a@test.local" },
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    expect(auth.isApiLoading).toBe(false);
   });
 
   it("logs in and updates session state", async () => {

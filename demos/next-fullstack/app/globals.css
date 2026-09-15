@@ -1404,6 +1404,17 @@ code {
   background: var(--color-bg);
 }
 
+.app-shell-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  min-height: 0;
+}
+
+.app-shell-content-pending {
+  visibility: hidden;
+}
+
 .app-shell-loading .spinner-label,
 .app-shell-loading .muted {
   color: var(--palette-light);

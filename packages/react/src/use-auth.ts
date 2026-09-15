@@ -12,12 +12,14 @@ export type AuthState = {
   user: AuthUser | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  /** True while a blocking auth API request is in flight (excludes background session refresh). */
+  isApiLoading: boolean;
   /** Set when the initial session check or an explicit refresh fails (non-expired). */
   sessionError: Error | null;
   login(input: LoginInput): Promise<LoginResult>;
   logout(): Promise<void>;
   register(input: RegisterInput): Promise<SessionResponse>;
-  refreshSession(): Promise<SessionResponse | null>;
+  refreshSession(options?: { blocking?: boolean }): Promise<SessionResponse | null>;
 };
 
 /** Headless auth hook — session state and login/logout/register methods. */
@@ -27,6 +29,7 @@ export function useAuth(): AuthState {
     user,
     isAuthenticated,
     isLoading,
+    isApiLoading,
     sessionError,
     login,
     logout,
@@ -39,6 +42,7 @@ export function useAuth(): AuthState {
     user,
     isAuthenticated,
     isLoading,
+    isApiLoading,
     sessionError,
     login,
     logout,
