@@ -1,8 +1,61 @@
 # @auth-ninja/core
 
-Shared configuration schema, error types, and crypto helpers for Auth-Ninja.
+Shared configuration schema, error types, crypto helpers, and auth primitives for Auth-Ninja.
 
-This package is headless — no UI. Wire it through `@auth-ninja/react` and a server adapter.
+This package is headless — no UI. Wire it through `@auth-ninja/react` and a server adapter (`@auth-ninja/next` or `AuthNinja.AspNetCore`).
+
+## Configuration
+
+Load and validate environment variables with Zod:
+
+```ts
+import { loadAuthNinjaConfig } from "@auth-ninja/core";
+
+const config = loadAuthNinjaConfig();
+// config.secret, config.baseUrl, config.databaseUrl, session/lockout/MFA options…
+```
+
+Required env vars: `AUTH_NINJA_SECRET` (≥ 32 chars), `AUTH_NINJA_BASE_URL`, `AUTH_NINJA_DATABASE_URL`. Full list: [main README config table](../../README.md#configuration).
+
+Generate a secret: `generateAuthNinjaSecret()` or `pnpm dlx @auth-ninja/cli keys generate`.
+
+## Subpath exports
+
+| Import | Contents |
+| --- | --- |
+| `@auth-ninja/core` | Config, errors, passwords, TOTP, lockout, audit, field encryption |
+| `@auth-ninja/core/errors` | Error types only |
+| `@auth-ninja/core/password-policy` | zxcvbn strength assessment |
+
+## Passwords
+
+```ts
+import { hashPassword, verifyPasswordWithTimingProtection } from "@auth-ninja/core";
+import { assessPasswordStrength, isPasswordStrongEnough } from "@auth-ninja/core/password-policy";
+```
+
+Argon2id hashing with constant-time verification. Minimum strength enforced via zxcvbn (`passwordMinScore`, default 2).
+
+## TOTP 2FA
+
+```ts
+import {
+  generateTotpSecret,
+  verifyTotpCode,
+  generateBackupCodes,
+  verifyBackupCode,
+} from "@auth-ninja/core";
+```
+
+## Lockout
+
+```ts
+import { LockoutEngine, InMemoryLockoutStore, lockoutConfigFromAuthConfig } from "@auth-ninja/core";
+```
+
+## Audit events
+
+Typed schemas for login, logout, lockout, and IP audit events — `createLoginAuditEvent`, `AUDIT_EVENT_TYPES`, etc.
 
 ## Error taxonomy
 

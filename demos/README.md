@@ -6,7 +6,10 @@ Throwaway UI for manual and E2E testing. **Not published to npm.**
 |------|-------|------|
 | `next-fullstack/` | React + Next.js | 3000 |
 | `dotnet-spa/` | React (Vite) + .NET API | 5174 |
+| `vite-react/` | React (Vite) UI only — proxies to a separate API | 5173 |
 | `e2e/` | Playwright vs Next demo | — |
+
+`vite-react/` is a headless-hook UI reference for manual testing against any Auth-Ninja backend. Prefer `next-fullstack/` or `dotnet-spa/` for full-stack demos.
 
 ## Run locally (monorepo contributors)
 

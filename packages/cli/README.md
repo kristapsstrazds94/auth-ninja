@@ -13,6 +13,9 @@ Full-stack only: **React + Next.js** or **React + .NET**.
 ```bash
 pnpm dlx @auth-ninja/cli setup --stack next
 pnpm dlx @auth-ninja/cli setup --stack dotnet
+pnpm dlx @auth-ninja/cli setup --cwd ./my-app
+pnpm dlx @auth-ninja/cli setup --skip-install    # env + migrate only
+pnpm dlx @auth-ninja/cli setup --skip-migrate      # install + env only
 ```
 
 From your project root (auto-detects stack when possible):
@@ -25,7 +28,7 @@ What `setup` does:
 
 1. Installs npm / NuGet packages for the selected stack
 2. Creates `.env` and `.env.example` (generates `AUTH_NINJA_SECRET`; never overwrites an existing `.env`)
-3. Applies PostgreSQL migrations (`users`, `sessions`, `credentials`, `audit_events`)
+3. Applies PostgreSQL migrations (`users`, `sessions`, `credentials`, `audit_events`, `password_reset_tokens`)
 4. Runs `doctor` validation
 5. Prints manual integration checklist (copy code from README)
 

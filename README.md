@@ -28,6 +28,21 @@ Auth-Ninja targets **full-stack** projects only — a React frontend and a backe
 
 Both backends implement the same [OpenAPI contract](packages/protocol/openapi.json) and share configuration via `@auth-ninja/core`.
 
+### Install packages manually
+
+Prefer explicit dependency control over the setup wizard:
+
+```bash
+# React + Next.js
+pnpm add @auth-ninja/core @auth-ninja/react @auth-ninja/next
+
+# React + .NET (SPA)
+pnpm add @auth-ninja/core @auth-ninja/react
+dotnet add package AuthNinja.AspNetCore
+```
+
+Then configure `.env` and run migrations — see [Setup](#setup) below.
+
 ---
 
 <h2 style="color:#5b2cff">Setup</h2>
@@ -70,7 +85,7 @@ Create the database if it does not exist, then apply migrations:
 pnpm dlx @auth-ninja/cli db migrate
 ```
 
-This creates all required tables: `users`, `sessions`, `credentials`, `audit_events`.
+This creates all required tables: `users`, `sessions`, `credentials`, `audit_events`, `password_reset_tokens`.
 
 ### Step 3 — Integrate manually
 
@@ -127,7 +142,20 @@ export async function POST(request: Request) {
 }
 ```
 
-Add handlers for: `register`, `logout`, `session`, `csrf`, `2fa/*`, and `passkeys/*`. Each uses the matching `create*Handler` from `@auth-ninja/next` — see [`demos/next-fullstack/app/auth/`](demos/next-fullstack/app/auth/) for the full route tree.
+Add handlers for: `register`, `logout`, `session`, `csrf`, `password-reset/*`, `2fa/*`, and `passkeys/*`. Each uses the matching `create*Handler` from `@auth-ninja/next` — see [`demos/next-fullstack/app/auth/`](demos/next-fullstack/app/auth/) for the full route tree.
+
+```ts
+// app/auth/password-reset/request/route.ts
+import { createPasswordResetRequestHandler } from "@auth-ninja/next";
+import { getAuthNinja } from "@/lib/auth-ninja";
+
+export async function POST(request: Request) {
+  const auth = await getAuthNinja();
+  return createPasswordResetRequestHandler(auth)(request);
+}
+```
+
+Password reset has no React hook — call the API with `createAuthClient` from `@auth-ninja/react` (same CSRF and cookie behavior as other auth requests).
 
 #### 3. Middleware — CSRF, rate limit, IP audit
 
@@ -314,9 +342,19 @@ Both adapters read the same `AUTH_NINJA_*` variables via `@auth-ninja/core`.
 | `AUTH_NINJA_SESSION_IDLE_MINUTES` | `15` | Idle timeout |
 | `AUTH_NINJA_SESSION_ABSOLUTE_HOURS` | `8` | Max session lifetime |
 | `AUTH_NINJA_LOCKOUT_MAX_ATTEMPTS` | `5` | Failed logins before lockout |
-| `AUTH_NINJA_CSRF_ENABLED` | `true` | CSRF on state-changing routes |
+| `AUTH_NINJA_LOCKOUT_WINDOW_MINUTES` | `15` | Window for counting failed attempts |
+| `AUTH_NINJA_LOCKOUT_DURATION_MINUTES` | `30` | Lockout duration after threshold |
+| `AUTH_NINJA_REQUIRE_2FA` | `false` | Require TOTP for all users |
+| `AUTH_NINJA_2FA_ISSUER` | `AuthNinja` | TOTP issuer shown in authenticator apps |
 | `AUTH_NINJA_PASSKEYS_ENABLED` | `true` | WebAuthn passkeys |
-| `AUTH_NINJA_REDIS_URL` | — | Redis for multi-instance production |
+| `AUTH_NINJA_PASSKEY_RP_ID` | `localhost` | WebAuthn RP ID (production: your domain) |
+| `AUTH_NINJA_IP_AUDIT_ENABLED` | `true` | Persist IP allowlist and rate-limit audit events |
+| `AUTH_NINJA_IP_ALLOWLIST` | — | Comma-separated CIDRs; empty = allow all |
+| `AUTH_NINJA_API_RATE_LIMIT` | `100` | Per-IP requests per minute on `/auth/*` |
+| `AUTH_NINJA_CSRF_ENABLED` | `true` | CSRF on state-changing routes |
+| `AUTH_NINJA_PASSWORD_MIN_SCORE` | `2` | Minimum zxcvbn score (0–4) for register and password reset |
+| `AUTH_NINJA_REDIS_URL` | — | Redis for multi-instance production (required when scaling horizontally) |
+| `AUTH_NINJA_CORS_ORIGINS` | — | .NET only: comma-separated browser origins when SPA calls API directly |
 
 Regenerate a secret: `pnpm dlx @auth-ninja/cli keys generate`
 
@@ -370,8 +408,19 @@ All npm packages publish at version **1.0.0** and version together via [Changese
 | `/auth/logout` | POST | Invalidate session |
 | `/auth/session` | GET | Current user; refreshes idle timer |
 | `/auth/csrf` | GET | CSRF token |
-| `/auth/2fa/*` | various | TOTP enrollment, verify, backup codes |
-| `/auth/passkeys/*` | various | WebAuthn register and login |
+| `/auth/password-reset/request` | POST | Request reset (generic response — no enumeration) |
+| `/auth/password-reset/confirm` | POST | Set new password with reset token |
+| `/auth/2fa/enroll` | POST | Start TOTP enrollment |
+| `/auth/2fa/confirm` | POST | Confirm TOTP with first code |
+| `/auth/2fa/verify` | POST | Complete login MFA step |
+| `/auth/2fa/backup-codes` | POST | Regenerate backup codes |
+| `/auth/2fa` | DELETE | Disable TOTP |
+| `/auth/passkeys/register/begin` | POST | Start passkey registration |
+| `/auth/passkeys/register/finish` | POST | Complete passkey registration |
+| `/auth/passkeys/login/begin` | POST | Start passkey login |
+| `/auth/passkeys/login/finish` | POST | Complete passkey login |
+| `/auth/passkeys` | GET | List registered passkeys |
+| `/auth/passkeys/{credentialId}` | DELETE | Remove a passkey |
 
 Sessions use an HttpOnly `auth_session` cookie (`Secure`, `SameSite=Strict`).
 
@@ -380,10 +429,12 @@ Sessions use an HttpOnly `auth_session` cookie (`Secure`, `SameSite=Strict`).
 | Hook / component | Purpose |
 |------------------|---------|
 | `AuthProvider` | Session context, idle refresh, cross-tab sync |
-| `useAuth()` | `user`, `login`, `register`, `logout` |
+| `useAuth()` | `user`, `login`, `register`, `logout`, `refreshSession` |
+| `useSession()` | Read-only session state (`user`, `isLoading`, `sessionError`) |
 | `RequireAuth` | Render children only when authenticated |
-| `use2FA()` | TOTP enroll, confirm, verify, disable |
+| `use2FA()` | TOTP enroll, confirm, verify, disable, backup codes |
 | `usePasskey()` | WebAuthn register, login, list, delete |
+| `createAuthClient()` | Low-level fetch wrapper with CSRF — use for password reset and custom flows |
 
 ---
 
@@ -401,6 +452,12 @@ Auth-Ninja is **fail-closed** — invalid sessions, CSRF tokens, and rate limits
 | Auth errors | Generic messages — no user enumeration |
 
 Full threat analysis: [`docs/THREAT-MODEL.md`](docs/THREAT-MODEL.md). Report vulnerabilities per [`SECURITY.md`](SECURITY.md).
+
+Before production deploy, complete the must-pass gates in [`docs/PRODUCTION.md`](docs/PRODUCTION.md) and run:
+
+```bash
+pnpm dlx @auth-ninja/cli doctor --production --strict
+```
 
 ---
 

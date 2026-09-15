@@ -10,7 +10,7 @@
   - **@auth-ninja/protocol** — OpenAPI contract and contract tests
   - **@auth-ninja/react** — headless hooks (`useAuth`, `useSession`, `use2FA`, `usePasskey`); no UI components
   - **@auth-ninja/next** — Drizzle schema, route handlers, middleware, WebAuthn passkeys
-  - **@auth-ninja/cli** — `init`, `doctor`, `keys generate`, `demo`
+  - **@auth-ninja/cli** — `setup`, `db migrate`, `doctor`, `keys generate`
 
   See [docs/PRODUCTION.md](https://github.com/kristapsstrazds94/auth-ninja/blob/main/docs/PRODUCTION.md) for production readiness gates.
 
