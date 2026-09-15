@@ -1,5 +1,11 @@
 # @auth-ninja/core
 
+## 1.1.0
+
+### Minor Changes
+
+- Sync README and package documentation with v1.0 API: password reset routes, full config table, hook reference, and corrected integration paths.
+
 ## 1.0.0
 
 ### Major Changes

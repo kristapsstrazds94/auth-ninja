@@ -397,7 +397,7 @@ flowchart TB
 | [`@auth-ninja/cli`](packages/cli) | `setup`, `db migrate`, `doctor`, `keys generate` |
 | [`AuthNinja.AspNetCore`](adapters/dotnet) | ASP.NET Core middleware and endpoints |
 
-All npm packages publish at version **1.0.0** and version together via [Changesets](.changeset/README.md).
+All npm packages publish at the **same version** (currently **1.1.0**) and version together via [Changesets](.changeset/README.md).
 
 ### Auth API
 

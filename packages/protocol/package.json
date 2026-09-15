@@ -1,6 +1,6 @@
 {
   "name": "@auth-ninja/protocol",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "description": "OpenAPI contract and shared auth event schemas",
   "type": "module",

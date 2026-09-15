@@ -1,6 +1,6 @@
 {
   "name": "@auth-ninja/cli",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "license": "MIT",
   "description": "CLI for full-stack Auth-Ninja setup, database migrations, and config validation",
   "type": "module",
